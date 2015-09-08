@@ -1,0 +1,43 @@
+
+# Import the basis environment and then clone it
+Import('basisEnv')
+mainEnv = basisEnv.Clone()
+
+# Import our utility functions
+Import('physxEnv')
+Import('buildList')
+mainEnv['CCFLAGS'].extend(physxEnv['CCFLAGS'])
+mainEnv['CPPDEFINES'].extend(physxEnv['CPPDEFINES'])
+mainEnv['CPPPATH'].extend(physxEnv['CPPPATH'])
+mainEnv['LIBPATH'].extend(physxEnv['LIBPATH'])
+mainEnv['LIBS'].extend(physxEnv['LIBS'])
+
+
+# Add our required elements to the environment
+mainDefs = mainEnv['CPPDEFINES']
+mainDefs.extend(Split('PHYSXLIB_SYM=EXPORT'))
+
+# Add our include paths to the environment
+mainIncs = mainEnv['CPPPATH']
+mainIncs.extend(Split('physxLib'))
+
+
+# Build-up subdirs and sublists of files within Hub
+#physxlibDir = 'physxLib'
+physxlibSrc = Split('PhysXLib.c++ PhysXRigidActor.c++ PhysXCollisionCallback.c++')
+
+
+# Collect together all the source files that make up Hub
+#mainSource = buildList(physxlibDir, physxlibSrc)
+mainSource = physxlibSrc
+
+
+# Now, compile the Hub objects
+mainObjs = mainEnv.SharedObject(source = mainSource)
+
+
+# Return a tuple containing the object files and the environment we should
+# use to link them
+mainTuple = mainObjs, mainEnv
+Return('mainTuple')
+
