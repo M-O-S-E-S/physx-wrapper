@@ -160,7 +160,7 @@ extern "C"
    /// collisions after every simulate call.
    /// 
    /// @param collisionArray The array that has been pinned to memory and will 
-   /// be transfering the collisions from the unmanaged code to managed code.
+   /// be transferring the collisions from the unmanaged code to managed code.
    /// @param maxUpdates The size of the collisionArray which in turn determines
    /// how many collisions can be sent after each simulate call.
    ///
@@ -331,13 +331,13 @@ extern "C"
    /// @param posX The x value of the new physical translation in the scene.
    /// @param posY The y value of the new physical translation in the scene.
    /// @param posZ The z value of the new physical translation in the scene.
-   /// @param rotX The x value of the quaternion representing the new roatation
+   /// @param rotX The x value of the quaternion representing the new rotation
    /// of the actor in the scene.
-   /// @param rotY The y value of the quaternion representing the new roatation
+   /// @param rotY The y value of the quaternion representing the new rotation
    /// of the actor in the scene.
-   /// @param rotZ The z value of the quaternion representing the new roatation
+   /// @param rotZ The z value of the quaternion representing the new rotation
    /// of the actor in the scene.
-   /// @param rotW The w value of the quaternion representing the new roatation
+   /// @param rotW The w value of the quaternion representing the new rotation
    /// of the actor in the scene.
    ///
    void setTranslation(unsigned int id, float posX, float posY, float posZ,

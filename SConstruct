@@ -193,7 +193,7 @@ elif buildTarget == 'posix.64bit':
    # Determine debug or release mode: default is release or 0 anything else is
    # debug mode
    if int(debug):
-      # Add these when compiliing for visual debugger of physX
+      # Add these when compiling for visual debugger of physX
       addExternal(physxPath, '/Include', '/Lib/linux64',
               'LowLevelDEBUG LowLevelClothDEBUG PhysX3ExtensionsDEBUG PhysX3VehicleDEBUG PhysXProfileSDKDEBUG PhysXVisualDebuggerSDKDEBUG PvdRuntimeDEBUG PxTaskDEBUG SceneQueryDEBUG SimulationControllerDEBUG');
       addExternal(physxPath, '/Include', '/Bin/linux64',
