@@ -27,7 +27,7 @@ debug = ARGUMENTS.get('debug', 0)
 ###############################################################################
 
 # Base paths for external libraries (platform dependent)
-if buildTarget == 'win64.64bit':
+if buildTarget == 'win32.64bit':
    # PhysX
    physxPath = 'W:/physX/PhysX-3.3.3/PhysXSDK';
    # pthread 
@@ -98,7 +98,36 @@ basisEnv = Environment()
 defines = Split('');
 
 # Then handle platform-specific issues
-if buildTarget == 'win32.32bit':
+if buildTarget == 'win32.64bit':
+   # Flags for the VC++ compiler
+   # /nologo      = Don't print the compiler banner
+   # /MD          = Use multithreaded DLL runtime
+   # /O2          = Optimize for speed
+   # /EHsc        = Exception handling
+   # /W3          = Warning level
+   # /Zc:forScope = Use standard C++ scoping rules in for loops
+   # /GR          = Enable C++ run-time type information
+   # /Gd          = Use __cdecl calling convention
+   # /Z7          = Generate debug information
+   compileFlags = Split('/nologo /MD /O2 /EHsc /W3 /Zc:forScope /GR /Gd /Z7')
+
+   # Additional flags to disable useless warnings in Windows
+   compileFlags += Split('/wd4091 /wd4275 /wd4290 /wd4068')
+
+   # Disable deprecation warnings for "insecure" and "nonstandard" functions
+   # in Windows
+   defines += Split('_CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE')
+
+   # Flags for the VC++ linker
+   # /DEBUG             = Generate debugging information
+   # /OPT:REF           = Optimize away unreferenced code
+   # /OPT:ICF           = Optimize away redundant function packages
+   # /INCREMENTAL:NO    = Do not perform incremental linking
+   # /SUBSYSTEM:WINDOWS = Create a Windows (not a console) application
+   # /MANIFEST          = Generate a manifest file
+   linkFlags = Split('/DEBUG /OPT:REF /OPT:ICF /INCREMENTAL:NO \
+                      /SUBSYSTEM:WINDOWS /MANIFEST')
+elif buildTarget == 'win32.32bit':
    # Flags for the VC++ compiler
    # /nologo      = Don't print the compiler banner
    # /MD          = Use multithreaded DLL runtime
@@ -181,12 +210,38 @@ extLibs = []
 
 # Depending on platform, add the external libraries that the plugin requires
 # (Windows requires more to be linked in than Linux does)
-if buildTarget == 'win32.32bit':
+if buildTarget == 'win32.64bit':
    # Add PhysX
    addExternal(physxPath, '/Include', '/Lib/vc12win64',
-               'PhysX3_x64 PhysX3CharacterKinematic_x64 PhysX3Common_x64 PhysX3Cooking_x64 PhysX3Extensions PhysX3Gpu_x64 PhysX3Vehicle');
+            'PhysX3_x64 \
+            PhysX3CharacterKinematic_x64 \
+            PhysX3Common_x64 \
+            PhysX3Cooking_x64 \
+            PhysX3Extensions \
+            PhysX3Gpu_x64 \
+            PhysX3Vehicle');
    addExternal(physxPath, '/Include', '/Bin/vc12win64',
-               'PhysX3_x64 PhysX3CharacterKinematic_x64 PhysX3Common_x64 PhysX3Cooking_x64');
+            'PhysX3_x64 \
+            PhysX3CharacterKinematic_x64 \
+            PhysX3Common_x64 \
+            PhysX3Cooking_x64');
+   # Add msinttypes headers
+   extIncPath.extend(Split(msinttypesPath + '/include'))
+elif buildTarget == 'win32.32bit':
+   # Add PhysX
+   addExternal(physxPath, '/Include', '/Lib/vc12win64',
+            'PhysX3_x64 \
+            PhysX3CharacterKinematic_x64 \
+            PhysX3Common_x64 \
+            PhysX3Cooking_x64 \
+            PhysX3Extensions \
+            PhysX3Gpu_x64 \
+            PhysX3Vehicle');
+   addExternal(physxPath, '/Include', '/Bin/vc12win64',
+            'PhysX3_x64 \
+            PhysX3CharacterKinematic_x64 \
+            PhysX3Common_x64 \
+            PhysX3Cooking_x64');
    # Add msinttypes headers
    extIncPath.extend(Split(msinttypesPath + '/include'))
 elif buildTarget == 'posix.64bit':
@@ -194,16 +249,42 @@ elif buildTarget == 'posix.64bit':
    # debug mode
    if int(debug):
       # Add these when compiling for visual debugger of physX
-      addExternal(physxPath, '/Include', '/Lib/linux64',
-              'LowLevelDEBUG LowLevelClothDEBUG PhysX3ExtensionsDEBUG PhysX3VehicleDEBUG PhysXProfileSDKDEBUG PhysXVisualDebuggerSDKDEBUG PvdRuntimeDEBUG PxTaskDEBUG SceneQueryDEBUG SimulationControllerDEBUG');
+      addExternal(physxPath, '/Include', '/Lib/linux64', 
+            'LowLevelDEBUG \
+            LowLevelClothDEBUG \
+            PhysX3ExtensionsDEBUG \
+            PhysX3VehicleDEBUG \
+            PhysXProfileSDKDEBUG \
+            PhysXVisualDebuggerSDKDEBUG \
+            PvdRuntimeDEBUG \
+            PxTaskDEBUG \
+            SceneQueryDEBUG \
+            SimulationControllerDEBUG');
       addExternal(physxPath, '/Include', '/Bin/linux64',
-              'PhysX3CharacterKinematicDEBUG_x64 PhysX3CommonDEBUG_x64 PhysX3CookingDEBUG_x64 PhysX3DEBUG_x64 PhysX3GpuDEBUG_x64');      
+            'PhysX3CharacterKinematicDEBUG_x64 \
+            PhysX3CommonDEBUG_x64 \
+            PhysX3CookingDEBUG_x64 \
+            PhysX3DEBUG_x64 \
+            PhysX3GpuDEBUG_x64');      
    else:
      # Add these when compiling for release
       addExternal(physxPath, '/Include', '/Lib/linux64',
-              'LowLevel LowLevelCloth PhysX3Extensions PhysX3Vehicle PhysXProfileSDK PhysXVisualDebuggerSDK PvdRuntime PxTask SceneQuery SimulationController');
+            'LowLevel \
+            LowLevelCloth \
+            PhysX3Extensions \
+            PhysX3Vehicle \
+            PhysXProfileSDK \
+            PhysXVisualDebuggerSDK \
+            PvdRuntime \
+            PxTask \
+            SceneQuery \
+            SimulationController');
       addExternal(physxPath, '/Include', '/Bin/linux64',
-              'PhysX3CharacterKinematic_x64 PhysX3Common_x64 PhysX3Cooking_x64 PhysX3_x64 PhysX3Gpu_x64'); 
+            'PhysX3CharacterKinematic_x64 \
+            PhysX3Common_x64 \
+            PhysX3Cooking_x64 \
+            PhysX3_x64 \
+            PhysX3Gpu_x64'); 
 elif buildTarget == 'posix.32bit':
    addExternal(physxPath, '/Include', '/Lib/linux32',
                'PhysX3Extensions PhysX3Vehicle PhysXProfileSDK PhysXVisualDebuggerSDK PxTask');
@@ -239,7 +320,9 @@ libTuple = SConscript(['libsrc/SConscript'], 'basisEnv physxEnv buildList')
 libObjs = libTuple[0]
 libEnv = libTuple[1]
 libLib = libEnv.SharedLibrary('lib/PhysX', libObjs)
-if buildTarget == 'win32.32bit':
+if buildTarget == 'win32.64bit':
+   embedManifest(libEnv, libLib, 2)
+elif buildTarget == 'win32.32bit':
    embedManifest(libEnv, libLib, 2)
 
 

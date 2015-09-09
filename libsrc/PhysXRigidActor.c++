@@ -266,9 +266,11 @@ void PhysXRigidActor::setLinearVelocity(float x, float y, float z)
 
 void PhysXRigidActor::setAngularVelocity(float x, float y, float z)
 {
-   // TODO: Currently not implemented. Kevoye will be making a commit almost
-   // immediately following this one with the correct implementation.
-//   rigid_actor->setAngularVelocity(PxVec3(x, y, z), true);
+   // Update the actor's angular velocity
+   if (dynamic_actor != NULL)
+   {
+      dynamic_actor->setAngularVelocity(PxVec3(x, y, z));
+   }
 }
 
 

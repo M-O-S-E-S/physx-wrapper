@@ -55,6 +55,9 @@ struct EntityProperties
    float          VelocityX;
    float          VelocityY;
    float          VelocityZ;
+   float          AngularVelocityX;
+   float          AngularVelocityY;
+   float          AngularVelocityZ;
 };
 
 static EntityProperties * update_array;
@@ -1175,6 +1178,11 @@ PHYSX_API void simulate(float time,
       updatedActors[i].VelocityY = velocity.y;
       updatedActors[i].VelocityZ = velocity.z;
 
+      // Update the actor's angular velocity
+      PxVec3 angularVelocity = actor->getAngularVelocity();
+      updatedActors[i].AngularVelocityX = angularVelocity.x;
+      updatedActors[i].AngularVelocityY = angularVelocity.y;
+      updatedActors[i].AngularVelocityZ = angularVelocity.z;
 
       // Save the actor's ID if one was saved in the actor's user data;
       // if the ID wasn't found, that means that this is an actor that
