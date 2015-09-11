@@ -5,63 +5,63 @@
 /// c++.
 
 /// The PhysX foundation that will be used throughout the PhysXWrapper.
-static PxFoundation * px_foundation;
+static PxFoundation *   px_foundation;
 
 /// The PxPhysics object that will be used throughout the PhysXWrapper.
-static PxPhysics * px_physics;
+static PxPhysics *   px_physics;
 
 /// The PxScene that will hold the entire physical scene.
-static PxScene * px_scene;
+static PxScene *   px_scene;
 
 /// The PxCooking object that is used when creating the height field.
-static PxCooking * px_cooking;
+static PxCooking *   px_cooking;
 
 /// The default error callback of PhysX used when creating the foundation.
-static PxDefaultErrorCallback error_callback;
+static PxDefaultErrorCallback   error_callback;
 
 /// The default allocator of PhysX used when creating the foundation.
-static PxDefaultAllocator allocator_callback;
+static PxDefaultAllocator   allocator_callback;
 
 /// Object that will handle the receiving and storage of all collisions within
 /// the physical scene.
-static PhysXCollisionCallback * px_collisions;
+static PhysXCollisionCallback *   px_collisions;
 
 /// Rigid static physical object that will hold the ground plane of the
 /// physical scene.
-static PxRigidStatic * ground_plane;
+static PxRigidStatic *   ground_plane;
 
 /// Flag that tracks when the scene has been initialized.
-static int scene_initialized;
+static int   scene_initialized;
 
 /// The max number of updates that can be passed from PhysXWrapper.
 /// This number is based on the size of the pinned memory array responsible for
 /// passing updates from the PhysXWrapper.
-static int max_updates;
+static int   max_updates;
 
 /// Map of all the actors in the current scene with keys being equal to the
 /// actor's id stored inside an atInt and the value being the actor.
-static atMap * actor_map;
+static atMap *   actor_map;
 
 /// Map of all the joints in the current scene with keys being equal to
 // the joint's id stored in an atInt and the value being the joint itself.
-static atMap * joint_map;
+static atMap *   joint_map;
 
 /// PvdConnection used to establish a stream with PhysX visual debugger.
-static debugger::comm::PvdConnection * theConnection;
+static debugger::comm::PvdConnection *   theConnection;
 
 /// A global value to store a specific ID for the terrain since none will be
 /// provided.
-static atInt * terrain_id;
+static atInt *   terrain_id;
 
 /// The height field scale that will be used to adjust the height field to an
 /// integer from a float and vice a versa.
-static float height_field_scale;
+static float   height_field_scale;
 
 /// Array of updates that is shared.
-static EntityProperties * update_array;
+static EntityProperties *   update_array;
 
 /// Array of collisions that is shared.
-static CollisionProperties * collisions_array;
+static CollisionProperties *   collisions_array;
 
 
 /// A struct shared in order to pass data consistently through the update array.
@@ -475,6 +475,7 @@ extern "C"
    /// @param linearUpperLimit Upper limits of each of the 3 translation axes
    /// @param angularLowerLimit Lower limits of each of the 3 rotational axes
    /// @param angularUpperLimit Upper limits of each of the 3 rotational axes
+   ///
    void addJoint(unsigned int jointID, unsigned int actorID1,
       unsigned int actorID2, float * actor1Pos, float * actor1Quat,
       float * actor2Pos, float * actor2Quat, float * linearLowerLimit,
