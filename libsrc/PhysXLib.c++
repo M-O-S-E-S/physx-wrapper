@@ -218,7 +218,7 @@ PHYSX_API int initialize()
    if (px_physics == NULL)
       return 0;
 
-   // Create a cooking object that will be used to generate meshes
+   // Create a cooking object that will generate meshes
    px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation, 
       PxCookingParams(PxTolerancesScale()));
 
@@ -535,9 +535,10 @@ PHYSX_API void createActorBox(
 
 
 PHYSX_API void createActorCapsule(
-   unsigned int id, char * name, float x, float y, float z,
-   float staticFriction, float dynamicFriction, float restitution,
-   float halfHeight, float radius, float density, bool isDynamic)
+   unsigned int id, char * name, float x, float y, float z, float rotX, 
+   float rotY, float rotZ, float rotW, float staticFriction, 
+   float dynamicFriction, float restitution, float halfHeight, float radius, 
+   float density, bool isDynamic)
 {
    PhysXRigidActor *     actor;
    PxMaterial *          material;

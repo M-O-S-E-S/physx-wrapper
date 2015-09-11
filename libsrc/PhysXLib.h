@@ -248,6 +248,14 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
+   /// @param rotX The x value of the quaternion representing the new rotation 
+   /// of the actor in the physical scene.
+   /// @param rotY The y value of the quaternion representing the new rotation 
+   /// of the actor in the physical scene.
+   /// @param rotZ The z value of the quaternion representing the new rotation 
+   /// of the actor in the physical scene.
+   /// @param rotW The w value of the quaternion representing the new rotation 
+   /// of the actor in the physical scene.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -261,7 +269,8 @@ extern "C"
    /// actor.
    ///
    void createActorCapsule(unsigned int id, char * name, float x, float y, 
-      float z, float staticFriction, float dynamicFriction, float restitution,
+      float z, float rotX, float rotY, float rotZ, float rotW, 
+      float staticFriction, float dynamicFriction, float restitution,
       float halfHeight, float radius, float density, bool isDynamic);
 
    /// Method to create a triangle mesh actor in the physical scene.

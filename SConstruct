@@ -98,7 +98,7 @@ basisEnv = Environment()
 defines = Split('');
 
 # Then handle platform-specific issues
-if buildTarget == 'win32.64bit':
+if buildTarget == 'win32.32bit':
    # Flags for the VC++ compiler
    # /nologo      = Don't print the compiler banner
    # /MD          = Use multithreaded DLL runtime
@@ -127,7 +127,7 @@ if buildTarget == 'win32.64bit':
    # /MANIFEST          = Generate a manifest file
    linkFlags = Split('/DEBUG /OPT:REF /OPT:ICF /INCREMENTAL:NO \
                       /SUBSYSTEM:WINDOWS /MANIFEST')
-elif buildTarget == 'win32.32bit':
+elif buildTarget == 'win32.64bit':
    # Flags for the VC++ compiler
    # /nologo      = Don't print the compiler banner
    # /MD          = Use multithreaded DLL runtime
@@ -210,7 +210,7 @@ extLibs = []
 
 # Depending on platform, add the external libraries that the plugin requires
 # (Windows requires more to be linked in than Linux does)
-if buildTarget == 'win32.64bit':
+if buildTarget == 'win32.32bit':
    # Add PhysX
    addExternal(physxPath, '/Include', '/Lib/vc12win64',
             'PhysX3_x64 \
@@ -227,7 +227,7 @@ if buildTarget == 'win32.64bit':
             PhysX3Cooking_x64');
    # Add msinttypes headers
    extIncPath.extend(Split(msinttypesPath + '/include'))
-elif buildTarget == 'win32.32bit':
+elif buildTarget == 'win32.64bit':
    # Add PhysX
    addExternal(physxPath, '/Include', '/Lib/vc12win64',
             'PhysX3_x64 \
@@ -320,9 +320,9 @@ libTuple = SConscript(['libsrc/SConscript'], 'basisEnv physxEnv buildList')
 libObjs = libTuple[0]
 libEnv = libTuple[1]
 libLib = libEnv.SharedLibrary('lib/PhysX', libObjs)
-if buildTarget == 'win32.64bit':
+if buildTarget == 'win32.32bit':
    embedManifest(libEnv, libLib, 2)
-elif buildTarget == 'win32.32bit':
+elif buildTarget == 'win32.64bit':
    embedManifest(libEnv, libLib, 2)
 
 
