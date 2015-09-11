@@ -1,7 +1,7 @@
-#include <iostream>
-#include <PxPhysicsAPI.h>
+#include "iostream"
+#include "PxPhysicsAPI.h"
 
-#include <atMap.h++>
+#include "atMap.h++"
 
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
@@ -1160,6 +1160,8 @@ PHYSX_API void addJoint(
    else
       rigidActor1 = NULL;
 
+   // Same here: check if given actor exists and get reference to rigid actor
+   // or set to NULL to indicate this is a point in the world frame
    if (actor2 != NULL)
       rigidActor2 = actor2->getRigidActor();
    else
