@@ -22,10 +22,8 @@ PhysXJoint::~PhysXJoint()
    // Clean up the ID members
    if (joint_id != NULL)
       delete joint_id;
-
    if (actor1_id != NULL)
       delete actor1_id;
-
    if (actor2_id != NULL)
       delete actor2_id;
 }

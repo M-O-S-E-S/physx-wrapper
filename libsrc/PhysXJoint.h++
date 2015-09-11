@@ -1,10 +1,10 @@
 #ifndef PHYSX_JOINT_H
 #define PHYSX_JOINT_H
 
-#include <PxPhysicsAPI.h>
+#include "PxPhysicsAPI.h"
 
-#include <atInt.h++>
-#include <atItem.h++>
+#include "atInt.h++"
+#include "atItem.h++"
 
 using namespace physx;
 
