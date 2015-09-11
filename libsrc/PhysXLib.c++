@@ -4,6 +4,7 @@
 #include <atMap.h++>
 
 #include "PhysXCollisionCallback.h++"
+#include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
 
 
@@ -33,6 +34,7 @@ static int                               scene_initialized = 0;
 static int                               max_updates;
 
 static atMap *                           actor_map = new atMap();
+static atMap *                           joint_map = new atMap();
 
 static debugger::comm::PvdConnection *   theConnection = NULL;
 
@@ -1117,6 +1119,176 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Add the newly created actor to the scene
    px_scene->addActor(*(actor->getActor()));
+}
+
+
+PHYSX_API void addJoint(
+   unsigned int jointID, unsigned int actorID1, unsigned int actorID2,
+   float * actor1Pos, float * actor1Quat, float * actor2Pos,
+   float * actor2Quat, float * linearLowerLimit, float * linearUpperLimit,
+   float * angularLowerLimit, float * angularUpperLimit)
+{
+   PhysXJoint *                physXJoint;
+   PhysXRigidActor *           actor1;
+   PhysXRigidActor *           actor2;
+   PxRigidActor *              rigidActor1;
+   PxRigidActor *              rigidActor2;
+   PxD6Joint *                 joint;
+   PxJointLinearLimit *        jointLinearLimit;
+   PxJointAngularLimitPair *   twistLimit;
+   PxJointLimitCone *          swingLimits;
+   PxTransform                 actor1Frame;
+   PxTransform                 actor2Frame;
+   float                       ySwingLimit;
+   float                       zSwingLimit;
+
+   // Check whether or not a joint with the given ID already exists;
+   // can't have the same IDs for different joints
+   physXJoint = (PhysXJoint *)joint_map->getValue(new atInt(jointID));
+   if (physXJoint != NULL)
+      return;
+
+   // Get the actors associated with a joint from the given actor IDs
+   actor1 = getActor(actorID1);
+   actor2 = getActor(actorID2);
+
+   // Check whether or not the given actor exists and get reference to
+   // the PhysX rigid actor; otherwise rigid actor is NULL which would
+   // indicate that the joint is attached to a point in the world frame
+   if (actor1 != NULL)
+      rigidActor1 = actor1->getRigidActor();
+   else
+      rigidActor1 = NULL;
+
+   if (actor2 != NULL)
+      rigidActor2 = actor2->getRigidActor();
+   else
+      rigidActor2 = NULL;
+
+   // Create the transform for each actor's position and orientation
+   // of the joint they are attached to
+   actor1Frame = PxTransform(PxVec3(actor1Pos[0], actor1Pos[1], actor1Pos[2]),
+      PxQuat(actor1Quat[0], actor1Quat[1], actor1Quat[2], actor1Quat[3]));
+   actor2Frame = PxTransform(PxVec3(actor2Pos[0], actor2Pos[1], actor2Pos[2]),
+      PxQuat(actor2Quat[0], actor2Quat[1], actor2Quat[2], actor2Quat[3]));
+
+   // Create a new D6 joint between the given actors
+   joint = PxD6JointCreate(
+      *px_physics, rigidActor1, actor1Frame, rigidActor2, actor2Frame);
+
+   // Indicate that this joint should be enforced, even under extreme duress
+   joint->setProjectionLinearTolerance(0.1f);
+   joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+
+   // Adjust linear constraints of the joint based on the given limits
+   // for each of the translational axes
+   for (int i = 0; i < 3; i++)
+   {
+      // Check to see how the lower limit compares to the upper limit
+      if (linearLowerLimit[i] == linearUpperLimit[i])
+      {
+         // The lower limit is the same as the upper limit, which means
+         // that the axis should be locked
+         joint->setMotion((PxD6Axis::Enum) i, PxD6Motion::eLOCKED);
+      }
+      else if (linearLowerLimit[i] > linearUpperLimit[i])
+      {
+         // The lower limit is greater than the upper limit, which means
+         // that the axis should be free
+         joint->setMotion((PxD6Axis::Enum) i, PxD6Motion::eFREE);
+      }
+      else
+      {
+         // The lower limit is less than the upper limit, which means
+         // the axis should be limited, but not locked
+         joint->setMotion((PxD6Axis::Enum) i, PxD6Motion::eLIMITED);
+
+         // Limit the linear freedom by the difference in the limits
+         // NOTE: In PhysX this causes all linear degrees of freedom to have
+         // the same limit
+         jointLinearLimit = new PxJointLinearLimit(
+            px_physics->getTolerancesScale(),
+            linearUpperLimit[i] - linearLowerLimit[i]);
+         joint->setLinearLimit(*jointLinearLimit);
+      }
+   }
+
+   // Adjust angular constraints of the joint based on the given limits
+   // for each of the angular axes
+   ySwingLimit = 0.0f;
+   zSwingLimit = 0.0f;
+   for (int i = 0; i < 3; i++)
+   {
+      // Check to see how the lower limit compares to the upper limit
+      if (angularLowerLimit[i] == angularUpperLimit[i])
+      {
+         // The lower limit is the same as the upper limit, which means
+         // that the axis should be locked
+         joint->setMotion((PxD6Axis::Enum) (i + 3), PxD6Motion::eLOCKED);
+      }
+      else if (angularLowerLimit[i] > angularUpperLimit[i])
+      {
+         // The lower limit is greater than the upper limit, which means that
+         // the axis should be free
+         joint->setMotion((PxD6Axis::Enum) (i + 3), PxD6Motion::eFREE);
+      }
+      else
+      {
+         // The lower limit is less than the upper limit, which means that
+         // the axis should be limited, but not locked
+         joint->setMotion((PxD6Axis::Enum) (i + 3), PxD6Motion::eLIMITED);
+
+         // Check to see which axis is limited
+         if (i == 0)
+         {
+            // If the axis is being limited is the x-axis, use the twist limits
+            twistLimit = new PxJointAngularLimitPair(
+               angularLowerLimit[i], angularUpperLimit[i]);
+            joint->setTwistLimit(*twistLimit);
+         }
+         else if (i == 1)
+         {
+            // This is a y-axis limit, which has to be set up at the same
+            // time as the z-axis limit in a limit cone; so just store
+            // the limit for now
+            ySwingLimit = angularUpperLimit[i] - angularLowerLimit[i];
+         }
+         else
+         {
+            // This is a z-axis limit, which has to be set up at the same
+            // time as the y-axis limit in a limit cone; so just store
+            // the limit for now
+            zSwingLimit = angularUpperLimit[i] - angularLowerLimit[i];
+         }
+      }
+   }
+
+   // Check to see if either y- and/or z-axis is supposed to be limited
+   if (ySwingLimit > 0.0 || zSwingLimit > 0.0)
+   {
+      // Create a swing limit to represent limits around both axes
+      swingLimits = new PxJointLimitCone(ySwingLimit, zSwingLimit);
+      joint->setSwingLimit(*swingLimits);
+   }
+
+   // Create a new container to hold the joint information
+   physXJoint = new PhysXJoint(joint, jointID, actorID1, actorID2);
+
+   // Save reference to the new joint
+   joint_map->addEntry(new atInt(jointID), physXJoint);
+}
+
+
+PHYSX_API void removeJoint(unsigned int id)
+{
+   PhysXJoint *   joint;
+
+   // Remove the given joint from the map
+   joint = (PhysXJoint *)joint_map->removeEntry(new atInt(id));
+
+   // Clean up the joint if it existed
+   if (joint != NULL)
+      delete joint;
 }
 
 

@@ -42,6 +42,10 @@ static int max_updates;
 /// actor's id stored inside an atInt and the value being the actor.
 static atMap * actor_map;
 
+/// Map of all the joints in the current scene with keys being equal to
+// the joint's id stored in an atInt and the value being the joint itself.
+static atMap * joint_map;
+
 /// PvdConnection used to establish a stream with PhysX visual debugger.
 static debugger::comm::PvdConnection * theConnection;
 
@@ -457,6 +461,30 @@ extern "C"
    ///
    void setHeightField(int terrainShapeID, int regionSizeX, int regionSizeY, 
       float rowSpacing, float columnSpacing, float * posts);
+
+   /// Add a joint between two actors.
+   ///
+   /// @param jointID The unique identifier of the joint being added
+   /// @param actorID1 The unique identifier of the first actor being joined
+   /// @param actorID2 The unique identifier of the second actor being joined
+   /// @param actorPos1 The position of joint relative to the first actor
+   /// @param actorQuat1 The orientaiton of joint relative to the first actor
+   /// @param actorPos2 The position of joint relative to the second actor
+   /// @param actorQuat2 The orientation of joint relative to the second actor
+   /// @param linearLowerLimit Lower limits of each of the 3 translation axes
+   /// @param linearUpperLimit Upper limits of each of the 3 translation axes
+   /// @param angularLowerLimit Lower limits of each of the 3 rotational axes
+   /// @param angularUpperLimit Upper limits of each of the 3 rotational axes
+   void addJoint(unsigned int jointID, unsigned int actorID1,
+      unsigned int actorID2, float * actor1Pos, float * actor1Quat,
+      float * actor2Pos, float * actor2Quat, float * linearLowerLimit,
+      float * linearUpperLimit, float * angularLowerLimit,
+      float * angularUpperLimit);
+
+   /// Remove joint from the physics scene.
+   ///
+   /// @param id The unique identifier of the PhysX joint
+   void removeJoint(unsigned int id);
 
    /// This method runs the main simulation of PhysX and will be called at
    /// every frame of the simulator.
