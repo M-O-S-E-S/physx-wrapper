@@ -61,7 +61,7 @@ void PhysXJoint::setFirstActorID(unsigned int id)
 
 atInt PhysXJoint::getFirstActorID()
 {
-   // Return the unique identifier of the first actor to whcih the joint
+   // Return the unique identifier of the first actor to which the joint
    // is attached to
    return *actor1_id;
 }
@@ -81,7 +81,7 @@ void PhysXJoint::setSecondActorID(unsigned int id)
 
 atInt PhysXJoint::getSecondActorID()
 {
-   // Return the unique identifier of the second actor to whcih the joint
+   // Return the unique identifier of the second actor to which the joint
    // is attached to
    return *actor2_id;
 }

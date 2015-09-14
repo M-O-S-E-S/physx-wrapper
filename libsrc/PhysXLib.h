@@ -468,7 +468,7 @@ extern "C"
    /// @param actorID1 The unique identifier of the first actor being joined
    /// @param actorID2 The unique identifier of the second actor being joined
    /// @param actorPos1 The position of joint relative to the first actor
-   /// @param actorQuat1 The orientaiton of joint relative to the first actor
+   /// @param actorQuat1 The orientation of joint relative to the first actor
    /// @param actorPos2 The position of joint relative to the second actor
    /// @param actorQuat2 The orientation of joint relative to the second actor
    /// @param linearLowerLimit Lower limits of each of the 3 translation axes
