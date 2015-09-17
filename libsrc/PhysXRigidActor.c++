@@ -22,7 +22,8 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    else
    {
       // Create a static actor for physical interactions
-      rigid_actor = (PxRigidActor *)physics->createRigidStatic(actorPos);
+      static_actor = physics->createRigidStatic(actorPos);
+      rigid_actor = (PxRigidActor *) static_actor;
    }
 
    // Don't assign a name yet 
@@ -61,7 +62,8 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    else
    {
       // Create a static actor for physical interactions
-      rigid_actor = (PxRigidActor *)physics->createRigidStatic(actorPos);
+      static_actor = physics->createRigidStatic(actorPos);
+      rigid_actor = (PxRigidActor *) static_actor;
    }
 
    // Don't assign a name yet
@@ -117,13 +119,23 @@ PxActor * PhysXRigidActor::getActor()
    return ((PxActor *)rigid_actor);
 }
 
-
 PxRigidActor * PhysXRigidActor::getRigidActor()
 {
-   // Return the current PhysX actor
+   // Return the current PhysX rigid actor
    return rigid_actor;
 }
 
+PxRigidDynamic * PhysXRigidActor::getRigidDynamic()
+{
+   // Return the current PhysX dynamic actor
+   return dynamic_actor;
+}
+
+PxRigidStatic * PhysXRigidActor::getRigidStatic()
+{
+   // Return the current PhysX static actor
+   return static_actor;
+}
 
 void PhysXRigidActor::setShape(PxShape * shape)
 {

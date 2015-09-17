@@ -31,6 +31,10 @@ class PhysXRigidActor : public atItem
       ///
       PxRigidDynamic *   dynamic_actor;
 
+      /// Current PhysX PxRigidStatic reference.
+      ///
+      PxRigidStatic *   static_actor;
+
       /// Current PhysX shape that represents this actor in the physical scene.
       ///
       PxShape *          actor_shape;
@@ -109,19 +113,34 @@ class PhysXRigidActor : public atItem
       /// object. 
       atInt *          getID();
 
-      /// Method to get the PhysX representation of this actor.
+      /// Method to get the PhysX representation of this actor as a
+      /// PxActor instance.
       ///
       /// @return The object that represents the PhysX actor inside of the 
       /// PhysX scene.
       ///
       PxActor *        getActor();
 
-      /// Method to get the PhysX representation of this actor.
+      /// Method to get the PhysX representation of this actor as a
+      /// PxRigidActor instance.
       ///
       /// @return The object that represents the PhysX actor inside of the 
       /// PhysX scene.
-      ///
       PxRigidActor *   getRigidActor();
+
+      /// Method to get the PhysX representation of this actor as a
+      /// PxRigidDynamic instance.
+      ///
+      /// @return The object that represents the PhysX actor inside of the 
+      /// PhysX scene.
+      PxRigidDynamic *    getRigidDynamic();
+
+      /// Method to get the PhysX representation of this actor as a
+      /// PxRigidStatic instance.
+      ///
+      /// @return The object that represents the PhysX actor inside of the 
+      /// PhysX scene.
+      PxRigidStatic *    getRigidStatic();
 
       /// Method to attach a shape to the PhysX actor.
       ///

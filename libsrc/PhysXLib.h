@@ -338,6 +338,20 @@ extern "C"
    ///
    void removeActor(unsigned int id);
 
+   /// Update the density of a physical actor.
+   ///
+   /// @param id The id of the actor to be updated.
+   /// @param density The updated density of the actor.
+   ///
+   bool updateActorDensity(unsigned int id, float density);
+
+   /// Update the mass of a physical actor.
+   ///
+   /// @param id The id of the actor to be updated.
+   /// @param mass The updated density of the actor.
+   ///
+   bool updateActorMass(unsigned int id, float mass);
+
    /// Updates an actors position and orientation inside the physical scene.
    ///
    /// @param id The id of the actor to be updated.

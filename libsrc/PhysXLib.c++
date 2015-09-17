@@ -139,7 +139,7 @@ PhysXRigidActor * getActor(atInt * id)
 // collection of flags describing the actions to take on a collision pair
 PxFilterFlags contactFilterShader(PxFilterObjectAttributes attributes0,
    PxFilterData filterData0, PxFilterObjectAttributes attributes1,
-   PxFilterData filterData1, PxPairFlags& pairFlags, 
+   PxFilterData filterData1, PxPairFlags& pairFlags,
    const void * constantBlock, PxU32 constantBlockSize)
 {
    // Check to see if either actor is a trigger
@@ -221,7 +221,7 @@ PHYSX_API int initialize()
       return 0;
 
    // Create a cooking object that will generate meshes
-   px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation, 
+   px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation,
       PxCookingParams(PxTolerancesScale()));
 
    // For now us a default value for the height scale to change the height
@@ -537,9 +537,9 @@ PHYSX_API void createActorBox(
 
 
 PHYSX_API void createActorCapsule(
-   unsigned int id, char * name, float x, float y, float z, float rotX, 
-   float rotY, float rotZ, float rotW, float staticFriction, 
-   float dynamicFriction, float restitution, float halfHeight, float radius, 
+   unsigned int id, char * name, float x, float y, float z, float rotX,
+   float rotY, float rotZ, float rotW, float staticFriction,
+   float dynamicFriction, float restitution, float halfHeight, float radius,
    float density, bool isDynamic)
 {
    PhysXRigidActor *     actor;
@@ -644,7 +644,7 @@ PHYSX_API void createActorTriangleMesh(
    triangleMesh = px_cooking->createTriangleMesh(
       meshDesc, px_physics->getPhysicsInsertionCallback());
 
-   // Create a geometry 
+   // Create a geometry
    meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
    meshScale.rotation = PxQuat::createIdentity();
    meshGeom = PxTriangleMeshGeometry(
@@ -769,6 +769,43 @@ PHYSX_API void removeActor(unsigned int id)
    px_scene->unlockWrite();
 }
 
+PHYSX_API bool updateActorDensity(unsigned int id, float density)
+{
+    PhysXRigidActor * rigidActor;
+
+    // Fetch the actor by the given id
+    rigidActor = getActor(id);
+
+    // Update the density for the actor if it is dynamic
+    if (rigidActor != NULL && rigidActor->isDynamic())
+    {
+        return PxRigidBodyExt::updateMassAndInertia(
+                *rigidActor->getRigidDynamic(), density);
+    }
+
+    // If the actor is not dynamic, or is not found
+    // Return false
+    return false;
+}
+
+PHYSX_API bool updateActorMass(unsigned int id, float mass)
+{
+   PhysXRigidActor * rigidActor;
+
+   // Fetch the actor by the given id
+   rigidActor = getActor(id);
+
+   // Update the mass for the actor if it is dynamic
+   if (rigidActor != NULL && rigidActor->isDynamic())
+   {
+       return PxRigidBodyExt::setMassAndUpdateInertia(
+               *rigidActor->getRigidDynamic(), mass);
+   }
+
+    // If the actor is not dynamic, or is not found
+    // Return false
+   return false;
+}
 
 PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
@@ -810,7 +847,7 @@ PHYSX_API float * getPosition(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Get the actor associated with the identifier from the map of actors 
+   // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
 
    // Make sure the actor was found
@@ -833,7 +870,7 @@ PHYSX_API void setRotation(unsigned int id, float x, float y, float z, float w)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Get the actor associated with the identifier from the map of actors 
+   // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
 
    // Make sure the actor was found
@@ -857,7 +894,7 @@ PHYSX_API float * getRotation(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Get the actor associated with the identifier from the map of actors 
+   // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
 
    // Make sure the actor was found
@@ -880,7 +917,7 @@ PHYSX_API void setLinearVelocity(unsigned int id, float x, float y, float z)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Get the actor associated with the identifier from the map of actors 
+   // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
 
    // Make sure the actor was found
@@ -898,9 +935,9 @@ PHYSX_API void setAngularVelocity(unsigned int id, float x, float y, float z)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Get the actor associated with the identifier from the map of actors   
+   // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
-   
+
    // Make sure the actor was found
    if (rigidActor != NULL)
    {
@@ -938,7 +975,7 @@ PHYSX_API void enableGravity(unsigned int id, bool enabled)
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
-   
+
    // Make sure the actor was found
    if (rigidActor != NULL)
    {
@@ -968,7 +1005,7 @@ PHYSX_API void createGroundPlane(float x, float y, float z)
    // TODO: The normals need to be passed into this method
    // Create a rigid static actor to represent the terrain and create
    // the plane geometry to define its shape
-   ground_plane = PxCreatePlane(*px_physics, PxPlane(PxVec3(0,0,1),0), 
+   ground_plane = PxCreatePlane(*px_physics, PxPlane(PxVec3(0,0,1),0),
       *material);
 
    // Add the plane to the scene
@@ -1002,7 +1039,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    PhysXRigidActor * actor;
 
    // TODO: Check that the terrain is added to the correct scene
-   
+
    // Make sure the scene has been initialized
    if (scene_initialized != 1)
    {
@@ -1036,7 +1073,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
       // precision as possible
       // NOTE: Both the incoming height field and the sample array have
       // row-major ordering, so the elements can be copied directly
-      heightFieldSampleArray[i].height = (PxI16)(posts[i] / 
+      heightFieldSampleArray[i].height = (PxI16)(posts[i] /
          height_field_scale);
 
       // For now, differing materials are not supported in the height field, so
@@ -1103,14 +1140,14 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Create a static actor to hold the terrain height map shape
    // TODO: Update ID
-   actor = createActor(terrain_id->getValue(), "terrain", 0.0f, 0.0f, 0.0f, 
+   actor = createActor(terrain_id->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
       false);
 
    // Rotate the height map to the correct world position, this is needed
    // because the height map is just a list of heights and doesn't include the
    // position or orientation
    // TODO: Fix this to allow for mega regions
-   newShape->setLocalPose(PxTransform(PxVec3(0.0f, 0.0f, 0.0f), 
+   newShape->setLocalPose(PxTransform(PxVec3(0.0f, 0.0f, 0.0f),
       PxQuat(0.5f, 0.5f, 0.5f, 0.5f)));
 
    // Add the shape for the terrain to the actor that has been added to the
