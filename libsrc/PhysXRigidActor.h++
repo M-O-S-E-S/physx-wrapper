@@ -1,11 +1,13 @@
+
 #ifndef PHYSX_ACTOR_H
 #define PHYSX_ACTOR_H
 
-#include <PxPhysicsAPI.h>
+#include "PxPhysicsAPI.h"
 
-#include <atInt.h++>
-#include <atItem.h++>
-#include <atString.h++>
+#include "atInt.h++"
+#include "atItem.h++"
+#include "atString.h++"
+
 
 using namespace physx;
 
@@ -18,6 +20,7 @@ enum ActorType
    DYNAMIC = 1
 };
 
+
 /// Container class to help with managing the PhysX actors.
 
 class PhysXRigidActor : public atItem
@@ -26,14 +29,6 @@ class PhysXRigidActor : public atItem
       /// Current PhysX actor reference.
       ///
       PxRigidActor *     rigid_actor;
-
-      /// Current PhysX dynamic actor reference.
-      ///
-      PxRigidDynamic *   dynamic_actor;
-
-      /// Current PhysX PxRigidStatic reference.
-      ///
-      PxRigidStatic *   static_actor;
 
       /// Current PhysX shape that represents this actor in the physical scene.
       ///
@@ -128,20 +123,6 @@ class PhysXRigidActor : public atItem
       /// PhysX scene.
       PxRigidActor *   getRigidActor();
 
-      /// Method to get the PhysX representation of this actor as a
-      /// PxRigidDynamic instance.
-      ///
-      /// @return The object that represents the PhysX actor inside of the 
-      /// PhysX scene.
-      PxRigidDynamic *    getRigidDynamic();
-
-      /// Method to get the PhysX representation of this actor as a
-      /// PxRigidStatic instance.
-      ///
-      /// @return The object that represents the PhysX actor inside of the 
-      /// PhysX scene.
-      PxRigidStatic *    getRigidStatic();
-
       /// Method to attach a shape to the PhysX actor.
       ///
       /// @param shape The shape that is being attached to the actor.
@@ -165,6 +146,22 @@ class PhysXRigidActor : public atItem
       /// @return The current name of the actor.
       ///
       atString *       getName();
+
+      /// Set the density for an actor (only valid for dynamic actors).
+      ///
+      /// @param density The density of the actor.
+      ///
+      /// @return bool Whether the update was successful or not.
+      ///
+      bool setDensity(float density);
+
+      /// Set the mass for an actor (only valid for dynamic actors).
+      ///
+      /// @param mass The mass of the actor.
+      ///
+      /// @return bool Whether the update was successful or not.
+      ///
+      bool setMass(float mass);
 
       /// Changes the position and orientation of the actor.
       ///
@@ -252,6 +249,7 @@ class PhysXRigidActor : public atItem
       ///
       void             enableGravity(bool enabled);
 };
+
 
 #endif
 

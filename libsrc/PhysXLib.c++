@@ -1,3 +1,4 @@
+
 #include "iostream"
 #include "PxPhysicsAPI.h"
 
@@ -769,24 +770,24 @@ PHYSX_API void removeActor(unsigned int id)
    px_scene->unlockWrite();
 }
 
+
 PHYSX_API bool updateActorDensity(unsigned int id, float density)
 {
-    PhysXRigidActor * rigidActor;
+   PhysXRigidActor * rigidActor;
 
-    // Fetch the actor by the given id
-    rigidActor = getActor(id);
+   // Fetch the actor by the given id
+   rigidActor = getActor(id);
 
-    // Update the density for the actor if it is dynamic
-    if (rigidActor != NULL && rigidActor->isDynamic())
-    {
-        return PxRigidBodyExt::updateMassAndInertia(
-                *rigidActor->getRigidDynamic(), density);
-    }
+   // Update the density for the actor if it is dynamic
+   if (rigidActor != NULL && rigidActor->isDynamic())
+   {
+      return rigidActor->setDensity(density);
+   }
 
-    // If the actor is not dynamic, or is not found
-    // Return false
-    return false;
+   // If the actor is not dynamic, or is not found, return false
+   return false;
 }
+
 
 PHYSX_API bool updateActorMass(unsigned int id, float mass)
 {
@@ -798,14 +799,13 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
    // Update the mass for the actor if it is dynamic
    if (rigidActor != NULL && rigidActor->isDynamic())
    {
-       return PxRigidBodyExt::setMassAndUpdateInertia(
-               *rigidActor->getRigidDynamic(), mass);
+      return rigidActor->setMass(mass);
    }
 
-    // If the actor is not dynamic, or is not found
-    // Return false
+   // If the actor is not dynamic, or is not found, return false
    return false;
 }
+
 
 PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)

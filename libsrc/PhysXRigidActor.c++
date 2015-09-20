@@ -13,17 +13,16 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    if (type == DYNAMIC)
    {
       // Create a dynamic actor for physical interactions
-      dynamic_actor = physics->createRigidDynamic(actorPos);
-      rigid_actor = (PxRigidActor *)dynamic_actor;
+      rigid_actor = (PxRigidActor *) physics->createRigidDynamic(actorPos);
 
       // Enable continuous collision detection for this dynamic actor
-      dynamic_actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+      ((PxRigidBody *) rigid_actor)->setRigidBodyFlag(
+         PxRigidBodyFlag::eENABLE_CCD, true);
    }
    else
    {
       // Create a static actor for physical interactions
-      static_actor = physics->createRigidStatic(actorPos);
-      rigid_actor = (PxRigidActor *) static_actor;
+      rigid_actor = (PxRigidActor *) physics->createRigidStatic(actorPos);
    }
 
    // Don't assign a name yet 
@@ -53,17 +52,16 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    if (type == DYNAMIC)
    {
       // Create a dynamic actor for physical interactions
-      dynamic_actor = physics->createRigidDynamic(actorPos);
-      rigid_actor = (PxRigidActor *)dynamic_actor;
+      rigid_actor = (PxRigidActor *) physics->createRigidDynamic(actorPos);
 
       // Enable continuous collision detection for this dynamic actor
-      dynamic_actor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+      ((PxRigidBody *) rigid_actor)->setRigidBodyFlag(
+         PxRigidBodyFlag::eENABLE_CCD, true);
    }
    else
    {
       // Create a static actor for physical interactions
-      static_actor = physics->createRigidStatic(actorPos);
-      rigid_actor = (PxRigidActor *) static_actor;
+      rigid_actor = (PxRigidActor *) physics->createRigidStatic(actorPos);
    }
 
    // Don't assign a name yet
@@ -119,23 +117,13 @@ PxActor * PhysXRigidActor::getActor()
    return ((PxActor *)rigid_actor);
 }
 
+
 PxRigidActor * PhysXRigidActor::getRigidActor()
 {
    // Return the current PhysX rigid actor
    return rigid_actor;
 }
 
-PxRigidDynamic * PhysXRigidActor::getRigidDynamic()
-{
-   // Return the current PhysX dynamic actor
-   return dynamic_actor;
-}
-
-PxRigidStatic * PhysXRigidActor::getRigidStatic()
-{
-   // Return the current PhysX static actor
-   return static_actor;
-}
 
 void PhysXRigidActor::setShape(PxShape * shape)
 {
@@ -172,6 +160,33 @@ atString * PhysXRigidActor::getName()
 {
    // Return the current name of this actor
    return actor_name;
+}
+
+
+bool PhysXRigidActor::setDensity(float density)
+{
+   if (actor_type == DYNAMIC)
+   {
+       return PxRigidBodyExt::updateMassAndInertia(
+                 *((PxRigidDynamic *) rigid_actor), density);
+   }
+
+   // Not allowed to set density on non-dynamic actors
+   return false;
+}
+
+
+bool PhysXRigidActor::setMass(float mass)
+{
+   // Only dynamic actors can have a mass
+   if (actor_type == DYNAMIC)
+   {
+       return PxRigidBodyExt::setMassAndUpdateInertia(
+                 *((PxRigidDynamic *) rigid_actor), mass);
+   }
+
+   // Not allowed to set density on non-dynamic actors
+   return false;
 }
 
 
@@ -271,17 +286,17 @@ float * PhysXRigidActor::getRotation()
 void PhysXRigidActor::setLinearVelocity(float x, float y, float z)
 {
    // Update the actor's linear velocity
-   if (dynamic_actor != NULL)
-      dynamic_actor->setLinearVelocity(PxVec3(x, y, z));
+   if (actor_type == DYNAMIC)
+      ((PxRigidDynamic *) rigid_actor)->setLinearVelocity(PxVec3(x, y, z));
 }
 
 
 void PhysXRigidActor::setAngularVelocity(float x, float y, float z)
 {
    // Update the actor's angular velocity
-   if (dynamic_actor != NULL)
+   if (actor_type == DYNAMIC)
    {
-      dynamic_actor->setAngularVelocity(PxVec3(x, y, z));
+      ((PxRigidDynamic *) rigid_actor)->setAngularVelocity(PxVec3(x, y, z));
    }
 }
 
