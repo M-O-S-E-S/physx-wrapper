@@ -319,19 +319,9 @@ physxEnv.Append(LIBS = extLibs)
 libTuple = SConscript(['libsrc/SConscript'], 'basisEnv physxEnv buildList')
 libObjs = libTuple[0]
 libEnv = libTuple[1]
-libLib = libEnv.SharedLibrary('lib/PhysX', libObjs)
+libLib = libEnv.SharedLibrary('lib/PhysXWrapper', libObjs)
 if buildTarget == 'win32.32bit':
    embedManifest(libEnv, libLib, 2)
 elif buildTarget == 'win32.64bit':
    embedManifest(libEnv, libLib, 2)
-
-
-# Finally, create the main application
-#appTuple = SConscript(['src/SConscript'], 
-#                      'basisEnv buildList')
-#appObjs = appTuple[0]
-#appEnv = appTuple[1]
-#mainApp = appEnv.Program('bin/main.exe', appObjs)
-#if buildTarget == 'win32.32bit':
-#   embedManifest(appEnv, mainApp, 1)
 
