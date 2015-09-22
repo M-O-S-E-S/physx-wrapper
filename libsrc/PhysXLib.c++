@@ -349,6 +349,8 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
 
             // Try to acquire the CUDA device if there is one and check that no
             // problem occurred
+            // NOTE: The 0 value indicates that CUDA should grab the first
+            // capable device
             cudaResult = cuDeviceGet(&cudaDevice, 0);
             if (cudaResult != CUDA_SUCCESS)
             {
