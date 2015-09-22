@@ -4,6 +4,8 @@
 
 #include "atMap.h++"
 
+#include "cuda.h"
+
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
@@ -283,6 +285,10 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    PxCudaContextManagerDesc   cudaManagerDesc;
    PxCudaContextManager *     cudaContextManager;
    PxProfileZoneManager *     profileZoneManager;
+   CUresult                   cudaResult;
+   int                        deviceCount;
+   CUdevice                   cudaDevice;
+   CUcontext                  cudaContext;
 
    // TODO: the gravity sets the normals for the scene: currently
    // set the gravity to the z-axis because of OpenSim; this should
@@ -302,83 +308,103 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
    sceneDesc.flags |= PxSceneFlag::eENABLE_KINEMATIC_PAIRS;
 
-   // Check if the gpu dispatcher is enabled
+   // Check that the user wants PhysX to run on the GPU
    if (gpuEnabled)
    {
-      // Print errors and debug for this function split from the rest of the
-      // errors and debug
-      printf("\n[PhysXLib::createScene]\n");
+      // Change the gpu enabled to false in case initialization of the gpu
+      // dispatcher fails
+      gpuEnabled = false;
 
+      // Confirm that the machine supports PhysX GPU
       #if PX_SUPPORT_GPU_PHYSX
-      printf("GPU is supported.\n");
-      #endif
+         // Create the profiler zone manager for the cuda context to send
+         // profile updates to the visual debugger
+         profileZoneManager = &PxProfileZoneManager::createProfileZoneManager(
+            px_foundation);
 
-      #if !defined(RENDERER_PVD) && !defined(PX_XBOXONE)
-      printf("Renderer enabled cuda.\n");
-      #endif
+         // Turn off interop mode inside of the PhysX CUDA manager description
+         cudaManagerDesc.interopMode = PxCudaInteropMode::NO_INTEROP;
 
-      // TODO: Check which graphics library is being used
-      if (1)
-      {
-         // Let the user know which type of device is being used
-         printf("GPU interop and device set for OpenGL.\n");
-
-         // Use OpenGL
-         cudaManagerDesc.interopMode = PxCudaInteropMode::OGL_INTEROP;
-
-         // Need a Cg context for the device
-         cudaManagerDesc.graphicsDevice = (void *) NULL;
-      }
-
-      // Create the profiler zone manager for the cuda context to send profile
-      // updates
-      profileZoneManager = &PxProfileZoneManager::createProfileZoneManager(
-         px_foundation);
-
-      if (!profileZoneManager)
-      {
-         printf("Profile Zone Manager failed.\n");
-      }
-
-      // Create the cuda context manager that has the gpu dispatcher that will
-      // be used with the scene
-      cudaContextManager = PxCreateCudaContextManager(*px_foundation,
-         cudaManagerDesc, profileZoneManager);
-
-      // Check that the cuda context was created succesfully, has a valid
-      // context, and that the scene description doesn't have a gpu dispatcher
-      if (cudaContextManager && cudaContextManager->contextIsValid() &&
-         sceneDesc.gpuDispatcher == NULL)
-      {
-         // Since cuda was correctly created and the scene doesn't have a gpu
-         // dispatcher get the cuda gpu dispatcher
-         sceneDesc.gpuDispatcher = cudaContextManager->getGpuDispatcher();
-
-         // Let the user know that the GPU is being used
-         printf("GPU enabled.\n");
-      }
-      else
-      {
-         // Let the user know that the GPU was not created succesfully
-         printf("GPU failed to initialize.\n");
-
-         if (!cudaContextManager)
+         // Initialize CUDA and check that there were no problems with the
+         // initialization
+         cudaResult = cuInit(0);
+         if (cudaResult != CUDA_SUCCESS)
          {
-            printf("Context Manager NULL.\n");
-         }
-         else if (!cudaContextManager->contextIsValid())
-         {
-            printf("Context not valid.\n");
+            // Let the user know that CUDA could not be initialized
+            cerr << "Failed to initialize CUDA.\n";
          }
          else
          {
-            printf("Scene had a GPU dispatcher.\n");
-         }
+            // Set the device count to 0 to ensure that CUDA gave the device
+            // count value
+            deviceCount = 0;
 
-         // Disable the gpu in order to try and save PhysXWrapper by enabling
-         // the CPU as a backup
-         gpuEnabled = false;
-      }
+            // Get the device count and again check that CUDA was successful
+            cudaResult = cuDeviceGetCount(&deviceCount);
+            if (cudaResult != CUDA_SUCCESS)
+            {
+               // Let the user know that CUDA could not get the device count
+               cerr << "Failed to get CUDA device count.\n";
+            }
+
+            // Try to acquire the CUDA device if there is one and check that no
+            // problem occurred
+            cudaResult = cuDeviceGet(&cudaDevice, 0);
+            if (cudaResult != CUDA_SUCCESS)
+            {
+               // Let the user know that CUDA could not get the device
+               cerr << "Failed to fetch CUDA device.\n";
+            }
+            else
+            {
+               // Try to create a CUDA context and check that no problem occurs
+               cudaResult = cuCtxCreate(&cudaContext, 0, cudaDevice);
+               if (cudaResult != CUDA_SUCCESS)
+               {
+                  // Let the user know that CUDA could not get the context
+                  cerr << "Failed to create CUDA context.\n";
+               }
+               else
+               {
+                  // Finish creating the PhysX CUDA context manager description 
+                  // by storing the CUDA context and a NULL graphics device 
+                  cudaManagerDesc.ctx = &cudaContext;
+                  cudaManagerDesc.graphicsDevice = (void *) NULL;
+
+                  // Attempt to create the PhysX CUDA context manager
+                  cudaContextManager = PxCreateCudaContextManager(
+                     *px_foundation, cudaManagerDesc, profileZoneManager);
+                  
+                  // Check that the PhysX CUDA context manager was created
+                  if (cudaContextManager == NULL)
+                  {
+                     // Let the user know that the PhysX CUDA context manager
+                     // failed creation
+                     cerr << "Failed to create the PhysX cuda context manager"
+                        ".\n";
+                  }
+                  else if (!cudaContextManager->contextIsValid())
+                  {
+                     // Althought the PhysX CUDAcontext manager was created the
+                     // context wasn't valid so let the user know
+                     cerr << "PhysX cuda context manager is invalid.\n";
+                  }
+                  else
+                  {
+                     // The GPU dispatcher is ready so add it to the scene
+                     sceneDesc.gpuDispatcher = 
+                        cudaContextManager->getGpuDispatcher();
+
+                     // Let the user know that the GPU is in use
+                     cerr << "PhysX GPU is enabled.\n";
+
+                     // The PhysX code will now run on the GPU
+                     gpuEnabled = true;
+                  }
+               }
+            }
+         }
+      #endif
    }
 
    // This check will enable the CPU if the user wanted it enabled, but it will
