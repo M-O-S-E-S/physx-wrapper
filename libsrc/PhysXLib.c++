@@ -806,6 +806,42 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
    return false;
 }
 
+PHYSX_API float getActorMass(unsigned int id)
+{
+   PhysXRigidActor * rigidActor;
+
+   // Fetch the physx actor by the given id
+   rigidActor = getActor(id);
+
+   // If the actor is not null, and is dynamic
+   // Return the mass
+   if (rigidActor != NULL && rigidActor->isDynamic())
+   {
+      return rigidActor->getMass();
+   }
+
+   // Otherwise, return 0.0f
+   return 0.0f;
+}
+
+PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float forceZ)
+{
+   PxVec3 force;
+   PhysXRigidActor * rigidActor;
+
+   // Create the force vector and get the actor
+   force = PxVec3(forceX, forceY, forceZ);
+   rigidActor = getActor(id);
+
+   // If the actor is not null, apply the force
+   if (rigidActor != NULL)
+   {
+      return rigidActor->addForce(force);
+   }
+
+   return false;
+}
+
 
 PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
