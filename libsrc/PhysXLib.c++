@@ -163,6 +163,7 @@ PxFilterFlags contactFilterShader(PxFilterObjectAttributes attributes0,
    // Always report collision
    pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
    pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
+   pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
 
    // Add the Continuous Collision Detection (CCD) flag, so that
    // CCD is enabled, and return the default filter flags
