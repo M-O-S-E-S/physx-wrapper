@@ -1064,6 +1064,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    PxMaterial * physxMaterial;
    PxShape * newShape;
    PhysXRigidActor * actor;
+   atInt *  terrainID;
 
    // TODO: Check that the terrain is added to the correct scene
 
@@ -1151,12 +1152,13 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Check if the scene already has a loaded terrain so that it can be removed
    // before the next terrain is loaded
-   if (actor_map->containsKey(terrainShapeID))
+   terrainID = new atInt(terrainShapeID);
+   if (actor_map->containsKey(terrainID))
    {
       // Remove the actor from the map of actors, but keep a reference so the
       // memory can be cleaned up after the actor has been removed from the
       // PhysX scene
-      actor = (PhysXRigidActor*) actor_map->removeEntry(terrainShapeID);
+      actor = (PhysXRigidActor*) actor_map->removeEntry(terrainID);
 
       // Remove the actor from the PhysX scene
       px_scene->removeActor(*(actor->getActor()), false);
@@ -1167,7 +1169,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Create a static actor to hold the terrain height map shape
    // TODO: Update ID
-   actor = createActor(terrainShapeID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
+   actor = createActor(terrainID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
       false);
 
    // Rotate the height map to the correct world position, this is needed
