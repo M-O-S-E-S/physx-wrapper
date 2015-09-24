@@ -41,8 +41,6 @@ static atMap *                           joint_map = new atMap();
 
 static debugger::comm::PvdConnection *   theConnection = NULL;
 
-static atInt *                           terrain_id = new atInt(1234);
-
 static float                             height_field_scale;
 
 
@@ -1153,12 +1151,12 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Check if the scene already has a loaded terrain so that it can be removed
    // before the next terrain is loaded
-   if (actor_map->containsKey(terrain_id))
+   if (actor_map->containsKey(terrainShapeID))
    {
       // Remove the actor from the map of actors, but keep a reference so the
       // memory can be cleaned up after the actor has been removed from the
       // PhysX scene
-      actor = (PhysXRigidActor*) actor_map->removeEntry(terrain_id);
+      actor = (PhysXRigidActor*) actor_map->removeEntry(terrainShapeID);
 
       // Remove the actor from the PhysX scene
       px_scene->removeActor(*(actor->getActor()), false);
@@ -1169,7 +1167,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
 
    // Create a static actor to hold the terrain height map shape
    // TODO: Update ID
-   actor = createActor(terrain_id->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
+   actor = createActor(terrainShapeID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
       false);
 
    // Rotate the height map to the correct world position, this is needed
