@@ -163,6 +163,18 @@ class PhysXRigidActor : public atItem
       ///
       bool setMass(float mass);
 
+      /// Get the mass for an actor (only valid for dynamic actors).
+      ///
+      /// @return float The mass of the physics actor.
+      ///
+      float getMass();
+
+      /// Applies a force (or impulse) to the actor as set by PhysX flags.
+      ///
+      /// @return bool If the force was applied.
+      ///
+      bool addForce(PxVec3 vector);
+
       /// Changes the position and orientation of the actor.
       ///
       /// @param posX The x value of the new position for this actor.

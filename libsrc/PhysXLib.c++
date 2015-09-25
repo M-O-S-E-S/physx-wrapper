@@ -80,9 +80,13 @@ PhysXRigidActor * createActor(unsigned int id,
 
    // Determine whether the actor to be created is dynamic or static
    if (isDynamic)
+   {
       actorType = DYNAMIC;
+   }
    else
+   {
       actorType = STATIC;
+   }
 
    // Create a new rigid actor with the given position and actor type
    actor = new PhysXRigidActor(px_physics, id, x, y, z, actorType);
@@ -102,9 +106,13 @@ PhysXRigidActor * createActor(unsigned int id,
 
    // Determine whether the actor to be created is dynamic or static
    if (isDynamic)
+   {
       actorType = DYNAMIC;
+   }
    else
+   {
       actorType = STATIC;
+   }
 
    // Create a new rigid actor with the given position and actor type
    actor = new PhysXRigidActor(px_physics, id, x, y, z, Rot, actorType);
@@ -257,7 +265,9 @@ PHYSX_API void release()
 {
    // Close the visual debugger if it's currently running
    if (theConnection)
-      theConnection->release();
+   {
+        theConnection->release();
+   }
 
    // Shut down the physics entirely
    px_physics->release();
@@ -279,8 +289,11 @@ PHYSX_API void initCollisionUpdate(
 {
    // Set the collisions array to the pointer given
    collisions_array = collisionArray;
+
    if (px_collisions)
-      px_collisions->setCollisionsArray(collisions_array, maxCollisions);
+   {
+       px_collisions->setCollisionsArray(collisions_array, maxCollisions);
+   }
 }
 
 
@@ -695,7 +708,9 @@ PHYSX_API void createActorTriangleMesh(
    // integers
    indexArray = new PxU32[indexCount];
    for (int i = 0; i < indexCount; i++)
-      indexArray[i] = (PxU32) indices[i];
+   {
+        indexArray[i] = (PxU32) indices[i];
+   }
 
    // Constuct a description of the actor mesh
    meshDesc.points.count = vertexCount;
@@ -815,7 +830,9 @@ PHYSX_API void removeActor(unsigned int id)
 
    // Can't remove actor if scene has not been initialized yet
    if (scene_initialized == 0)
-      return;
+   {
+        return;
+   }
 
    // Try and remove the given actor from the map and check to see
    // if the actor exists
@@ -878,13 +895,53 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
 }
 
 
+PHYSX_API float getActorMass(unsigned int id)
+{
+   PhysXRigidActor * rigidActor;
+
+   // Fetch the physx actor by the given id
+   rigidActor = getActor(id);
+
+   // If the actor is not null, and is dynamic
+   // Return the mass
+   if (rigidActor != NULL && rigidActor->isDynamic())
+   {
+      return rigidActor->getMass();
+   }
+
+   // Otherwise, return 0.0f
+   return 0.0f;
+}
+
+PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float forceZ)
+{
+   PxVec3 force;
+   PhysXRigidActor * rigidActor;
+
+   // Create the force vector and get the actor
+   force = PxVec3(forceX, forceY, forceZ);
+   rigidActor = getActor(id);
+
+   // If the actor is not null, apply the force
+   if (rigidActor != NULL)
+   {
+      return rigidActor->addForce(force);
+   }
+
+   return false;
+}
+
+
 PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
 {
    PhysXRigidActor *   rigidActor;
 
-   // Update the transform data of the given actor, if found
+   // Attempt to get the specified actor by its id
    rigidActor = getActor(id);
+
+   // If we have succesfully retrieved the actor
+   // set the translation
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();

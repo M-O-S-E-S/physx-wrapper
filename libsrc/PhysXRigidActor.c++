@@ -190,6 +190,30 @@ bool PhysXRigidActor::setMass(float mass)
 }
 
 
+float PhysXRigidActor::getMass()
+{
+   // Only dynamic actors can have a mass
+   if (actor_type == DYNAMIC)
+   {  
+      return ((PxRigidDynamic *) rigid_actor)->getMass();  
+   }
+
+   return 0.0f;
+}
+
+bool PhysXRigidActor::addForce(PxVec3 force)
+{
+   // Only dynamic actors should have forces applied
+   if (actor_type == DYNAMIC)
+   {
+      ((PxRigidDynamic *) rigid_actor)->addForce(force);
+      return true;
+   }
+
+   return false;
+}
+
+
 void PhysXRigidActor::setTranslation(float posX, float posY, float posZ,
    float rotX, float rotY, float rotZ, float rotW)
 {

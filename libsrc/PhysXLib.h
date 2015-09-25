@@ -343,6 +343,8 @@ extern "C"
    /// @param id The id of the actor to be updated.
    /// @param density The updated density of the actor.
    ///
+   /// @return If the mass was updated
+   ///
    bool updateActorDensity(unsigned int id, float density);
 
    /// Update the mass of a physical actor.
@@ -350,7 +352,18 @@ extern "C"
    /// @param id The id of the actor to be updated.
    /// @param mass The updated density of the actor.
    ///
+   /// @return If the mass was updated
+   ///
    bool updateActorMass(unsigned int id, float mass);
+
+   /// Get the mass of a physical actor.
+   ///
+   /// @param id The id of the actor for which the mass
+   /// should be returned.
+   ///
+   /// @return The mass of the object
+   ///
+   float getActorMass(unsigned int id);
 
    /// Updates an actors position and orientation inside the physical scene.
    ///
