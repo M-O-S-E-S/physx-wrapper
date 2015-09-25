@@ -36,6 +36,8 @@ if buildTarget == 'win32.64bit':
    atlasPath = 'W:/atlas'
    # inttypes.h for MSVC
    msinttypesPath = 'L:/msinttypes-r26'
+   # CUDA
+   cudaPath = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5'
 elif buildTarget == 'win32.32bit':
    # PhysX
    physxPath = 'W:/physX/PhysX-3.3.3/PhysXSDK';
@@ -45,6 +47,8 @@ elif buildTarget == 'win32.32bit':
    atlasPath = 'W:/atlas'
    # inttypes.h for MSVC
    msinttypesPath = 'L:/msinttypes-r26'
+   # CUDA
+   cudaPath = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5'
 elif buildTarget == 'posix.64bit':
    # PhysX
    physxPath = '/irl/tools/libs/physx-3.3.3-1.3.3-src/PhysX-3.3/PhysXSDK';
@@ -52,6 +56,8 @@ elif buildTarget == 'posix.64bit':
    pthreadPath = '/usr'
    # ATLAS
    atlasPath = '#../atlas'
+   # CUDA
+   cudaPath = '/usr/local/cuda-7.0'
 else:
    # Unsupported architecture so bail
    print "Unsupported target type ", buildTarget
@@ -184,6 +190,26 @@ else:
 incPath = Split('')
 libPath = Split('')
 libs = Split('')
+
+ # Add CUDA
+if buildTarget == 'win32.32bit':
+   cudaIncPath = buildList(cudaPath, 'include')
+   cudaLibPath = buildList(cudaPath, 'lib/x64')
+   incPath.extend(cudaIncPath)
+   libPath.extend(cudaLibPath)
+   libs.extend(Split('cuda'))
+elif buildTarget == 'win32.64bit':
+   cudaIncPath = buildList(cudaPath, 'include')
+   cudaLibPath = buildList(cudaPath, 'lib/x64')
+   incPath.extend(cudaIncPath)
+   libPath.extend(cudaLibPath)
+   libs.extend(Split('cuda'))
+elif buildTarget == 'posix.64bit':
+   cudaIncPath = buildList(cudaPath, 'include')
+   cudaLibPath = buildList(cudaPath, 'lib64')
+   incPath.extend(cudaIncPath)
+   libPath.extend(cudaLibPath)
+   libs.extend(Split('cuda'))
 
 # Add the elements to the environment
 basisEnv.Append(CCFLAGS = compileFlags)
