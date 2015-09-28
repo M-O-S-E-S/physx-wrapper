@@ -33,7 +33,7 @@ static PhysXCollisionCallback *          px_collisions;
 
 static PxRigidStatic *                   ground_plane;
 
-static int                               scene_initialized = 0;
+static bool                              scene_initialized = false;
 
 static int                               max_updates;
 
@@ -44,7 +44,7 @@ static debugger::comm::PvdConnection *   theConnection = NULL;
 
 static float                             height_field_scale;
 
-static atNotifier *                      m_log;
+static atNotifier *                      logger;
 
 struct EntityProperties
 {
@@ -187,7 +187,7 @@ void startVisualDebugger()
    {
       // The visual debugger won't work so let the user know and stop
       // trying to create a connection
-      m_log->notify(AT_INFO, "Unable to start NVidia visual debugger.\n");
+      logger->notify(AT_INFO, "Unable to start NVidia visual debugger.\n");
       return;
    }
 
@@ -210,7 +210,7 @@ void startVisualDebugger()
    // not be created
    if (theConnection)
    {
-      m_log->notify(AT_INFO, "Connected to the NVidia visual debugger.\n");
+      logger->notify(AT_INFO, "Connected to the NVidia visual debugger.\n");
    }
 }
 
@@ -221,8 +221,8 @@ void startVisualDebugger()
 PHYSX_API int initialize()
 {
    // Initialize the logger and set the name of this class
-   m_log = new atNotifier();
-   m_log->setName("[PhysXLib] ");
+   logger = new atNotifier();
+   logger->setName("[PhysXLib] ");
     
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
@@ -247,7 +247,7 @@ PHYSX_API int initialize()
    // Warn user that cooking utilities were unable to be created
    if (px_cooking == NULL)
    {
-      m_log->notify(AT_WARN, "Cooking utilities failed to initialize!\n");
+      logger->notify(AT_WARN, "Cooking utilities failed to initialize!\n");
    }
 
    // Create the collision callback
@@ -349,7 +349,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
          if (cudaResult != CUDA_SUCCESS)
          {
             // Let the user know that CUDA could not be initialized
-            m_log->notify(AT_WARN, "Failed to initialize CUDA.\n");
+            logger->notify(AT_WARN, "Failed to initialize CUDA.\n");
          }
          else
          {
@@ -362,7 +362,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
             if (cudaResult != CUDA_SUCCESS)
             {
                // Let the user know that CUDA could not get the device count
-               m_log->notify(AT_WARN, "Failed to get CUDA device count.\n");
+               logger->notify(AT_WARN, "Failed to get CUDA device count.\n");
             }
 
             // Try to acquire the CUDA device if there is one and check that no
@@ -373,7 +373,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
             if (cudaResult != CUDA_SUCCESS)
             {
                // Let the user know that CUDA could not get the device
-               m_log->notify(AT_WARN, "Failed to fetch CUDA device.\n");
+               logger->notify(AT_WARN, "Failed to fetch CUDA device.\n");
             }
             else
             {
@@ -382,7 +382,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                if (cudaResult != CUDA_SUCCESS)
                {
                   // Let the user know that CUDA could not get the context
-                  m_log->notify(AT_WARN, "Failed to create CUDA context.\n");
+                  logger->notify(AT_WARN, "Failed to create CUDA context.\n");
                }
                else
                {
@@ -400,14 +400,14 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                   {
                      // Let the user know that the PhysX CUDA context manager
                      // failed creation
-                     m_log->notify(AT_WARN, "Failed to create the PhysX "
+                     logger->notify(AT_WARN, "Failed to create the PhysX "
                         "cude context manager.\n");
                   }
                   else if (!cudaContextManager->contextIsValid())
                   {
                      // Althought the PhysX CUDAcontext manager was created the
                      // context wasn't valid so let the user know
-                     m_log->notify(AT_WARN, "PhysX cuda context manager is "
+                     logger->notify(AT_WARN, "PhysX cuda context manager is "
                         "invalid.\n");
                   }
                   else
@@ -417,7 +417,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                         cudaContextManager->getGpuDispatcher();
 
                      // Let the user know that the GPU is in use
-                     m_log->notify(AT_INFO, "PhysX GPU is enabled.\n");
+                     logger->notify(AT_INFO, "PhysX GPU is enabled.\n");
 
                      // The PhysX code will now run on the GPU
                      gpuEnabled = true;
@@ -457,7 +457,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
          else if (cpuDispatcher != NULL)
          {
             // Notify the user that the CPU is currently in use
-            m_log->notify(AT_INFO, "CPU enabled.\n");
+            logger->notify(AT_INFO, "CPU enabled.\n");
 
             // Assign the created dispatcher to the scene description
             sceneDesc.cpuDispatcher = cpuDispatcher;
@@ -474,7 +474,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    // Print error and return 0 (false) if the scene failed to be created
    if (px_scene == NULL)
    {
-      m_log->notify(AT_ERROR, "Failed to create PhysX scene.\n");
+      logger->notify(AT_ERROR, "Failed to create PhysX scene.\n");
       return 0;
    }
 
@@ -483,7 +483,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    px_scene->setSimulationEventCallback(px_collisions);
 
    // Successfully created the scene
-   scene_initialized = 1;
+   scene_initialized = true;
    return 1;
 }
 
@@ -512,7 +512,7 @@ PHYSX_API void createActorSphere(
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
-   if (scene_initialized == 1 && !actor_map->containsKey(checkID))
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
    {
       px_scene->lockWrite();
 
@@ -539,7 +539,7 @@ PHYSX_API void createActorSphere(
    else
    {
       // Alert that the actor could not be created
-      m_log->notify(AT_WARN, "Failed to create actor! Scene has not been "
+      logger->notify(AT_WARN, "Failed to create actor! Scene has not been "
          "initialized or actor already existed.\n");
    }
 
@@ -565,7 +565,7 @@ PHYSX_API void createActorBox(
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
-   if (scene_initialized == 1 && !actor_map->containsKey(checkID))
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
    {
       px_scene->lockWrite();
 
@@ -592,7 +592,7 @@ PHYSX_API void createActorBox(
    else
    {
       // Alert that the actor could not be created
-      m_log->notify(AT_WARN, "Failed to create actor! Scene has not been "
+      logger->notify(AT_WARN, "Failed to create actor! Scene has not been "
          "initialized or actor already existed.\n");
    }
 
@@ -620,7 +620,7 @@ PHYSX_API void createActorCapsule(
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
-   if (scene_initialized == 1 && !actor_map->containsKey(checkID))
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
    {
       px_scene->lockWrite();
 
@@ -653,7 +653,7 @@ PHYSX_API void createActorCapsule(
    else
    {
       // Alert that the actor could not be created
-      m_log->notify(AT_WARN, "Failed to create actor! Scene has not been "
+      logger->notify(AT_WARN, "Failed to create actor! Scene has not been "
          "initialized or actor already existed.\n");
    }
 }
@@ -680,65 +680,71 @@ PHYSX_API void createActorTriangleMesh(
    // actor
    checkID = new atInt(id);
 
-   // Don't create the actor if it already exists or if the scene has not been
-   // initialized
-   if (scene_initialized == 0 || actor_map->containsKey(checkID))
-      return;
-
-   // Prevent scene from being written to while actor is being created
-   px_scene->lockWrite();
-
-   // Create the rigid actor for this mesh and add it to the scene
-   actor = createActor(id, name, x, y, z, isDynamic);
-
-   // Create a new material; used to resolve collisions
-   material =
-      px_physics->createMaterial(staticFriction, dynamicFriction, restitution);
-
-   // Convert the given array of vertex points to an array of PhysX vectors,
-   // for use by PhysX
-   vertexArray = new PxVec3[vertexCount];
-   for (int i = 0; i < vertexCount; i++)
+   // Check that the scene has been initialized and that the actor doesn't
+   // already exist
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
    {
-      vertexArray[i] =
-         PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
-   }
+      // Prevent scene from being written to while actor is being created
+      px_scene->lockWrite();
 
-   // Convert the given array of indices into an array of PhysX unsigned
-   // integers
-   indexArray = new PxU32[indexCount];
-   for (int i = 0; i < indexCount; i++)
+      // Create the rigid actor for this mesh and add it to the scene
+      actor = createActor(id, name, x, y, z, isDynamic);
+
+      // Create a new material; used to resolve collisions
+      material = px_physics->createMaterial(staticFriction, dynamicFriction, 
+         restitution);
+
+      // Convert the given array of vertex points to an array of PhysX vectors,
+      // for use by PhysX
+      vertexArray = new PxVec3[vertexCount];
+      for (int i = 0; i < vertexCount; i++)
+      {
+         vertexArray[i] =
+            PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+      }
+
+      // Convert the given array of indices into an array of PhysX unsigned
+      // integers
+      indexArray = new PxU32[indexCount];
+      for (int i = 0; i < indexCount; i++)
+      {
+         indexArray[i] = (PxU32) indices[i];
+      }
+
+      // Constuct a description of the actor mesh
+      meshDesc.points.count = vertexCount;
+      meshDesc.points.stride = sizeof(PxVec3);
+      meshDesc.points.data = vertexArray;
+      meshDesc.triangles.count = indexCount / 3;
+      meshDesc.triangles.stride = sizeof(PxU32) * 3;
+      meshDesc.triangles.data = indexArray;
+
+      // Create the triangle mesh using the cooking library
+      triangleMesh = px_cooking->createTriangleMesh(
+         meshDesc, px_physics->getPhysicsInsertionCallback());
+
+      // Create a geometry
+      meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
+      meshScale.rotation = PxQuat::createIdentity();
+      meshGeom = PxTriangleMeshGeometry(
+         triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
+
+      // Create a new shape for the mesh and add it to the actor
+      meshShape = px_physics->createShape(meshGeom, *material);
+      actor->setShape(meshShape);
+
+      // Add the newly created actor to the scene
+      px_scene->addActor(*(actor->getActor()));
+
+      // Finished creating new mesh actor
+      px_scene->unlockWrite();
+   }
+   else
    {
-        indexArray[i] = (PxU32) indices[i];
+      // Let the user know that the triangle mesh could not be created
+      logger->notify(AT_WARN, "Unable to create triangle mesh for actor, "
+         "because the scene wasn't initialized or actor already existed.\n");
    }
-
-   // Constuct a description of the actor mesh
-   meshDesc.points.count = vertexCount;
-   meshDesc.points.stride = sizeof(PxVec3);
-   meshDesc.points.data = vertexArray;
-   meshDesc.triangles.count = indexCount / 3;
-   meshDesc.triangles.stride = sizeof(PxU32) * 3;
-   meshDesc.triangles.data = indexArray;
-
-   // Create the triangle mesh using the cooking library
-   triangleMesh = px_cooking->createTriangleMesh(
-      meshDesc, px_physics->getPhysicsInsertionCallback());
-
-   // Create a geometry
-   meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
-   meshScale.rotation = PxQuat::createIdentity();
-   meshGeom = PxTriangleMeshGeometry(
-      triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
-
-   // Create a new shape for the mesh and add it to the actor
-   meshShape = px_physics->createShape(meshGeom, *material);
-   actor->setShape(meshShape);
-
-   // Add the newly created actor to the scene
-   px_scene->addActor(*(actor->getActor()));
-
-   // Finished creating new mesh actor
-   px_scene->unlockWrite();
 }
 
 
@@ -763,63 +769,69 @@ PHYSX_API void createActorConvexMesh(
    // actor
    checkID = new atInt(id);
 
-   // Don't create the actor if it already exists or if the scene has not been
-   // initialized
-   if (scene_initialized == 0 || actor_map->containsKey(checkID))
-      return;
-
-   // Prevent scene from being written to while actor is being created
-   px_scene->lockWrite();
-
-   // Create the rigid actor for this mesh and add it to the scene
-   actor = createActor(id, name, x, y, z, isDynamic);
-
-   // Create a new material; used to resolve collisions
-   material =
-      px_physics->createMaterial(staticFriction, dynamicFriction, restitution);
-
-   // Convert the given array of vertex points to an array of PhysX
-   // vectors, for use by PhysX
-   vertexArray = new PxVec3[vertexCount];
-   for (int i = 0; i < vertexCount; i++)
+   // Check that the scene has been initialized and that the actor doesn't
+   // already exist
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
    {
-      vertexArray[i] =
-         PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+      // Prevent scene from being written to while actor is being created
+      px_scene->lockWrite();
+
+      // Create the rigid actor for this mesh and add it to the scene
+      actor = createActor(id, name, x, y, z, isDynamic);
+
+      // Create a new material; used to resolve collisions
+      material =
+         px_physics->createMaterial(staticFriction, dynamicFriction, restitution);
+
+      // Convert the given array of vertex points to an array of PhysX
+      // vectors, for use by PhysX
+      vertexArray = new PxVec3[vertexCount];
+      for (int i = 0; i < vertexCount; i++)
+      {
+         vertexArray[i] =
+            PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+      }
+
+      // Construct a description of the actor mesh
+      meshDesc.points.count = vertexCount;
+      meshDesc.points.stride = sizeof(PxVec3);
+      meshDesc.points.data = vertexArray;
+      meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+      meshDesc.vertexLimit = 256;
+
+      // Attempt to 'cook' the mesh data into a form which allows PhysX to
+      // perform efficient collision detection; results are written to
+      // the stream buffer
+      if (px_cooking->cookConvexMesh(meshDesc, buffer))
+      {
+         // Sucessfully cooked the convex mesh so create the input stream
+         // from the resulting data and use it to create the convex mesh
+         inputData =
+            new PxDefaultMemoryInputData(buffer.getData(), buffer.getSize());
+         convexMesh = px_physics->createConvexMesh(*inputData);
+
+         // Create the geometry for the mesh
+         meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
+         meshScale.rotation = PxQuat::createIdentity();
+         meshGeom = PxConvexMeshGeometry(convexMesh, meshScale);
+
+         // Create a new shape for the mesh and add it to the associated actor
+         meshShape = px_physics->createShape(meshGeom, *material);
+         actor->setShape(meshShape);
+
+         // Add the newly created actor to the scene
+         px_scene->addActor(*(actor->getActor()));
+      }
+
+      // Finished creating new mesh actor
+      px_scene->unlockWrite();
    }
-
-   // Construct a description of the actor mesh
-   meshDesc.points.count = vertexCount;
-   meshDesc.points.stride = sizeof(PxVec3);
-   meshDesc.points.data = vertexArray;
-   meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-   meshDesc.vertexLimit = 256;
-
-   // Attempt to 'cook' the mesh data into a form which allows PhysX to
-   // perform efficient collision detection; results are written to
-   // the stream buffer
-   if (px_cooking->cookConvexMesh(meshDesc, buffer))
+   else
    {
-      // Sucessfully cooked the convex mesh so create the input stream
-      // from the resulting data and use it to create the convex mesh
-      inputData =
-         new PxDefaultMemoryInputData(buffer.getData(), buffer.getSize());
-      convexMesh = px_physics->createConvexMesh(*inputData);
-
-      // Create the geometry for the mesh
-      meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
-      meshScale.rotation = PxQuat::createIdentity();
-      meshGeom = PxConvexMeshGeometry(convexMesh, meshScale);
-
-      // Create a new shape for the mesh and add it to the associated actor
-      meshShape = px_physics->createShape(meshGeom, *material);
-      actor->setShape(meshShape);
-
-      // Add the newly created actor to the scene
-      px_scene->addActor(*(actor->getActor()));
+      // Let the user know that the convex mesh could not be created
+      logger->notify(AT_WARN, "Unable to create convex mesh due to screen "
+         "initialization or actor already exists.\n");
    }
-
-   // Finished creating new mesh actor
-   px_scene->unlockWrite();
 }
 
 
@@ -829,10 +841,8 @@ PHYSX_API void removeActor(unsigned int id)
    PxActor *                   actor;
 
    // Can't remove actor if scene has not been initialized yet
-   if (scene_initialized == 0)
-   {
-        return;
-   }
+   if (scene_initialized == false)
+      return;
 
    // Try and remove the given actor from the map and check to see
    // if the actor exists
@@ -840,7 +850,7 @@ PHYSX_API void removeActor(unsigned int id)
    if (rigidActor == NULL)
    {
       // Alert that the given actor name could not be found
-      m_log->notify(AT_WARN, "Failed to remove actor %u. Actor not found.\n",
+      logger->notify(AT_WARN, "Failed to remove actor %u. Actor not found.\n",
          id);
       return;
    }
@@ -965,7 +975,7 @@ PHYSX_API void setPosition(unsigned int id, float x, float y, float z)
    }
    else
    {
-      m_log->notify(AT_WARN, "Failed to update actor %u's position. Actor "
+      logger->notify(AT_WARN, "Failed to update actor %u's position. Actor "
          "not found.\n", id);
    }
 }
@@ -987,7 +997,7 @@ PHYSX_API float * getPosition(unsigned int id)
    else
    {
       // Let the user know that the actor could not be found
-      m_log->notify(AT_WARN, "Failed to retrieve actor %u's position. Actor "
+      logger->notify(AT_WARN, "Failed to retrieve actor %u's position. Actor "
          "not found.\n", id);
       return 0;
    }
@@ -1012,7 +1022,7 @@ PHYSX_API void setRotation(unsigned int id, float x, float y, float z, float w)
    else
    {
       // Let the user know that the actor could not be found
-      m_log->notify(AT_WARN, "Failed to update actor %u's rotation. Actor "
+      logger->notify(AT_WARN, "Failed to update actor %u's rotation. Actor "
          "not found.\n", id);
    }
 }
@@ -1034,7 +1044,7 @@ PHYSX_API float * getRotation(unsigned int id)
    else
    {
       // Let the user know that the actor could not be found
-      m_log->notify(AT_WARN, "Failed to retrieve actor %u's rotation. Actor "
+      logger->notify(AT_WARN, "Failed to retrieve actor %u's rotation. Actor "
          "not found.\n", id);
       return 0;
    }
@@ -1091,7 +1101,7 @@ PHYSX_API void setGravity(unsigned int id, float x, float y, float z)
    else
    {
       // Failed to find the actor with the given identifier
-      m_log->notify(AT_WARN, "Failed to update actor %u's gravity. Actor not "
+      logger->notify(AT_WARN, "Failed to update actor %u's gravity. Actor not "
          "found.\n", id);
    }
 }
@@ -1170,7 +1180,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    // TODO: Check that the terrain is added to the correct scene
 
    // Make sure the scene has been initialized
-   if (scene_initialized != 1)
+   if (scene_initialized != true)
    {
       return;
    }
@@ -1231,7 +1241,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    if (heightField == NULL)
    {
       // Send error message to the user
-      m_log->notify(AT_ERROR, "Failed to create height field.\n");
+      logger->notify(AT_ERROR, "Failed to create height field.\n");
 
       // Clean up resources and break out of the method, since the height field
       // doesn't exist
