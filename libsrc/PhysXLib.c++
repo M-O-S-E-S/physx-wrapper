@@ -401,7 +401,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                      // Let the user know that the PhysX CUDA context manager
                      // failed creation
                      logger->notify(AT_WARN, "Failed to create the PhysX "
-                        "cude context manager.\n");
+                        "cuda context manager.\n");
                   }
                   else if (!cudaContextManager->contextIsValid())
                   {
@@ -829,7 +829,7 @@ PHYSX_API void createActorConvexMesh(
    else
    {
       // Let the user know that the convex mesh could not be created
-      logger->notify(AT_WARN, "Unable to create convex mesh due to screen "
+      logger->notify(AT_WARN, "Unable to create convex mesh due to scene "
          "initialization or actor already exists.\n");
    }
 }
