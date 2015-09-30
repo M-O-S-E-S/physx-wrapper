@@ -29,35 +29,38 @@ debug = ARGUMENTS.get('debug', 0)
 # Base paths for external libraries (platform dependent)
 if buildTarget == 'win32.64bit':
    # PhysX
-   physxPath = 'W:/physX/PhysX-3.3.3/PhysXSDK';
+   physxPath = ARGUMENTS.get('physxPath', 'W:/physX/PhysX-3.3.3/PhysXSDK')
    # pthread 
-   pthreadPath = 'L:/pthread-win32-2.8.0'
+   pthreadPath = ARGUMENTS.get('pthreadPath', 'L:/pthread-win32-2.8.0')
    # ATLAS
-   atlasPath = 'W:/atlas'
+   atlasPath = ARGUMENTS.get('atlasPath', 'W:/atlas')
    # inttypes.h for MSVC
-   msinttypesPath = 'L:/msinttypes-r26'
+   msinttypesPath = ARGUMENTS.get('msinttypesPath', 'L:/msinttypes-r26')
    # CUDA
-   cudaPath = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5'
+   cudaPath = ARGUMENTS.get('cudaPath',
+                 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5')
 elif buildTarget == 'win32.32bit':
    # PhysX
-   physxPath = 'W:/physX/PhysX-3.3.3/PhysXSDK';
+   physxPath = ARGUMENTS.get('physxPath', 'W:/physX/PhysX-3.3.3/PhysXSDK')
    # pthread 
-   pthreadPath = 'L:/pthread-win32-2.8.0'
+   pthreadPath = ARGUMENTS.get('pthreadPath', 'L:/pthread-win32-2.8.0')
    # ATLAS
-   atlasPath = 'W:/atlas'
+   atlasPath = ARGUMENTS.get('atlasPath', 'W:/atlas')
    # inttypes.h for MSVC
-   msinttypesPath = 'L:/msinttypes-r26'
+   msinttypesPath = ARGUMENTS.get('msinttypesPath', 'L:/msinttypes-r26')
    # CUDA
-   cudaPath = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5'
+   cudaPath = ARGUMENTS.get('cudaPath',
+                 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5')
 elif buildTarget == 'posix.64bit':
    # PhysX
-   physxPath = '/irl/tools/libs/physx-3.3.3-1.3.3-src/PhysX-3.3/PhysXSDK';
+   physxPath = ARGUMENTS.get('physxPath',
+                  '/irl/tools/libs/physx-3.3.3-1.3.3-src/PhysX-3.3/PhysXSDK')
    # pthread (see subpaths below)
-   pthreadPath = '/usr'
+   pthreadPath = ARGUMENTS.get('pthreadPath', '/usr')
    # ATLAS
-   atlasPath = '#../atlas'
+   atlasPath = ARGUMENTS.get('atlasPath', '#../atlas')
    # CUDA
-   cudaPath = '/usr/local/cuda-7.0'
+   cudaPath = ARGUMENTS.get('cudaPath', '/usr/local/cuda-7.0')
 else:
    # Unsupported architecture so bail
    print "Unsupported target type ", buildTarget
