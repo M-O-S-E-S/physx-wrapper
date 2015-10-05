@@ -69,7 +69,7 @@ class PhysXCollisionCallback : public PxSimulationEventCallback
       /// @return An array of collision properties that hold the information
       /// about the collisions that occurred this frame.
       ///
-      CollisionProperties * getCollisions(uint * nbCollisions);
+      CollisionProperties * getCollisions(unsigned int * nbCollisions);
 
       /// Method to store the array of collisions for the collision callback 
       /// class.

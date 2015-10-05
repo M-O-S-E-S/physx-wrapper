@@ -29,10 +29,10 @@
 using namespace physx;
 
 
-CollisionProperties * PhysXCollisionCallback::getCollisions(uint * nbCollisions)
+CollisionProperties * PhysXCollisionCallback::getCollisions(unsigned int * nbCollisions)
 {
    // Set the number of collisions
-   *nbCollisions = (uint) collision_count;
+   *nbCollisions = (unsigned int) collision_count;
 
    // Reset the number of collisions that have occurred since they have now
    // been sent

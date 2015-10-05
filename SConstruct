@@ -147,7 +147,7 @@ elif buildTarget == 'win32.64bit':
    # /GR          = Enable C++ run-time type information
    # /Gd          = Use __cdecl calling convention
    # /Z7          = Generate debug information
-   compileFlags = Split('/nologo /MD /O2 /EHsc /W3 /Zc:forScope /GR /Gd /Z7')
+   compileFlags = Split('/nologo /MDd /O2 /EHsc /W3 /Zc:forScope /GR /Gd /Z7')
 
    # Additional flags to disable useless warnings in Windows
    compileFlags += Split('/wd4091 /wd4275 /wd4290 /wd4068')
@@ -231,8 +231,9 @@ physxEnv = Environment()
 
 # Initialize the external used library information (include path, lib path
 # and libs)
-extFlags = basisEnv['CCFLAGS']
-extDefines = ['NDEBUG']
+#extFlags = basisEnv['CCFLAGS']
+extFlags = []
+extDefines = []
 extIncPath = []
 extLibPath = []
 extLibs = []
@@ -257,20 +258,44 @@ if buildTarget == 'win32.32bit':
    # Add msinttypes headers
    extIncPath.extend(Split(msinttypesPath + '/include'))
 elif buildTarget == 'win32.64bit':
-   # Add PhysX
-   addExternal(physxPath, '/Include', '/Lib/vc12win64',
-            'PhysX3_x64 \
-            PhysX3CharacterKinematic_x64 \
-            PhysX3Common_x64 \
-            PhysX3Cooking_x64 \
-            PhysX3Extensions \
-            PhysX3Gpu_x64 \
-            PhysX3Vehicle');
-   addExternal(physxPath, '/Include', '/Bin/vc12win64',
-            'PhysX3_x64 \
-            PhysX3CharacterKinematic_x64 \
-            PhysX3Common_x64 \
-            PhysX3Cooking_x64');
+   # Determine debug or release mode: default is release (or 0); anything else
+   # is debug mode
+   if int(debug):
+      # Add these when compiling for visual debugger of physX
+      addExternal(physxPath, '/Include', '/Lib/vc12win64', 
+            'LowLevelDEBUG \
+            PhysX3ExtensionsDEBUG \
+            PhysX3VehicleDEBUG \
+            PhysXProfileSDKDEBUG \
+            PxTaskDEBUG \
+            PhysXVisualDebuggerSDKDEBUG')
+      addExternal(physxPath, '/Include', '/Bin/vc12win64',
+            'PhysX3CharacterKinematicDEBUG_x64 \
+            PhysX3CommonDEBUG_x64 \
+            PhysX3CookingDEBUG_x64 \
+            PhysX3DEBUG_x64 \
+            PhysX3GpuDEBUG_x64');      
+      # Add the _DEBUG define in order to link to debug mode
+      extDefines.extend(Split('_DEBUG'))
+   else:
+      # Add PhysX
+      addExternal(physxPath, '/Include', '/Lib/vc12win64',
+               'PhysX3_x64 \
+               PhysX3CharacterKinematic_x64 \
+               PhysX3Common_x64 \
+               PhysX3Cooking_x64 \
+               PhysX3Extensions \
+               PhysX3Gpu_x64 \
+               PxTask \
+               PhysXProfileSDK \
+               PhysX3Vehicle');
+      addExternal(physxPath, '/Include', '/Bin/vc12win64',
+               'PhysX3_x64 \
+               PhysX3CharacterKinematic_x64 \
+               PhysX3Common_x64 \
+               PhysX3Cooking_x64');
+      extDefines.extend(Split('NDEBUG'))
+
    # Add msinttypes headers
    extIncPath.extend(Split(msinttypesPath + '/include'))
 elif buildTarget == 'posix.64bit':
@@ -294,7 +319,9 @@ elif buildTarget == 'posix.64bit':
             PhysX3CommonDEBUG_x64 \
             PhysX3CookingDEBUG_x64 \
             PhysX3DEBUG_x64 \
-            PhysX3GpuDEBUG_x64');      
+            PhysX3GpuDEBUG_x64');
+      # Add the _DEBUG define in order to link to debug mode
+      extDefines.extend(Split('_DEBUG'))
    else:
      # Add these when compiling for release
       addExternal(physxPath, '/Include', '/Lib/linux64',
@@ -314,6 +341,7 @@ elif buildTarget == 'posix.64bit':
             PhysX3Cooking_x64 \
             PhysX3_x64 \
             PhysX3Gpu_x64'); 
+      extDefines.extend(Split('NDEBUG'))
 elif buildTarget == 'posix.32bit':
    addExternal(physxPath, '/Include', '/Lib/linux32',
                'PhysX3Extensions PhysX3Vehicle PhysXProfileSDK PhysXVisualDebuggerSDK PxTask');
@@ -321,7 +349,7 @@ elif buildTarget == 'posix.32bit':
                'PhysX3CharacterKinematic_x32 PhysX3Common_x32 PhysX3Cooking_x32 -lPhysX3_x32');
 else:
    # Unsupported architecture so bail
-   print "UnsupportedC target type ", buildTarget
+   print "Unsupported target type ", buildTarget
    sys.exit(0)
 
 
