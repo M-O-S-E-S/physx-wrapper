@@ -294,6 +294,7 @@ elif buildTarget == 'win32.64bit':
                PhysX3CharacterKinematic_x64 \
                PhysX3Common_x64 \
                PhysX3Cooking_x64');
+      # Add the NDEBUG flag in order to link in release mode
       extDefines.extend(Split('NDEBUG'))
 
    # Add msinttypes headers
@@ -341,6 +342,7 @@ elif buildTarget == 'posix.64bit':
             PhysX3Cooking_x64 \
             PhysX3_x64 \
             PhysX3Gpu_x64'); 
+      # Add the NDEBUG flag in order to link in release mode
       extDefines.extend(Split('NDEBUG'))
 elif buildTarget == 'posix.32bit':
    addExternal(physxPath, '/Include', '/Lib/linux32',
