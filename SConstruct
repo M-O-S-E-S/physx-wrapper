@@ -231,7 +231,6 @@ physxEnv = Environment()
 
 # Initialize the external used library information (include path, lib path
 # and libs)
-#extFlags = basisEnv['CCFLAGS']
 extFlags = []
 extDefines = []
 extIncPath = []
