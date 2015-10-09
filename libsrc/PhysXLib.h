@@ -212,6 +212,37 @@ extern "C"
    /// 
    void releaseScene();
 
+   /// Method to create a PxAggregate to store scene actors in.
+   ///
+   /// @param id The id of the aggregate to be created.
+   ///
+   void createAggregate(unsigned int id);
+
+
+   /// Method to remove a PxAggregate that stores scene actors.
+   ///
+   /// @param id The id of the aggregate to be destroyed.
+   ///
+   void removeAggregate(unsigned int id);
+
+   /// Method to add a PxActor to a PxAggregate by their ids.
+   ///
+   /// @param aggregateId The id of the aggregate that the actor
+   /// will be added to.
+   /// @param actorId The id of the actor to be added to the specified
+   /// aggregate instance. 
+   /// 
+   bool addToAggregate(unsigned int aggregateId, unsigned int actorId);
+
+   /// Method to remove a PxActor from a PxAggregatte by their ids.
+   ///
+   /// @param aggregateId The id of the aggregate that the actor
+   /// will be removed from.
+   /// @param actorId The id of the actor to be removed in the specified
+   /// aggregate instance. 
+   /// 
+   bool removeFromAggregate(unsigned aggregateId, unsigned int, actorId);
+   
    /// Method to create a sphere actor in the physical scene.
    ///
    /// @param id The id of the actor.
