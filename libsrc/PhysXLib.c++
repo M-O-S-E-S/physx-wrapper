@@ -250,7 +250,7 @@ PHYSX_API int initialize()
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
-    
+
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
       PX_PHYSICS_VERSION, allocator_callback, error_callback);
@@ -279,8 +279,6 @@ PHYSX_API int initialize()
 
    // Create the collision callback
    px_collisions = new PhysXCollisionCallback();
-
-   px_aggregates = (PxAggregate *) malloc(sizeof(PxAggregate*)*1024);
 
    // Initialize the visual debugger
    startVisualDebugger();
@@ -332,7 +330,7 @@ PHYSX_API void createAggregate(unsigned int id)
 
    // Try to get the PxAggregate pointer from the aggregate map
    aggregate = (PxAggregate *) aggregate_map->getValue(new atInt(id));
-   
+
    // If the aggregate returned exists, return the function call
    // because we cannot have multiple of the same id'd aggregates
    if (aggregate != NULL)
@@ -495,15 +493,15 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                }
                else
                {
-                  // Finish creating the PhysX CUDA context manager description 
-                  // by storing the CUDA context and a NULL graphics device 
+                  // Finish creating the PhysX CUDA context manager description
+                  // by storing the CUDA context and a NULL graphics device
                   cudaManagerDesc.ctx = &cudaContext;
                   cudaManagerDesc.graphicsDevice = (void *) NULL;
 
                   // Attempt to create the PhysX CUDA context manager
                   cudaContextManager = PxCreateCudaContextManager(
                      *px_foundation, cudaManagerDesc, profileZoneManager);
-                  
+
                   // Check that the PhysX CUDA context manager was created
                   if (cudaContextManager == NULL)
                   {
@@ -522,7 +520,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                   else
                   {
                      // The GPU dispatcher is ready so add it to the scene
-                     sceneDesc.gpuDispatcher = 
+                     sceneDesc.gpuDispatcher =
                         cudaContextManager->getGpuDispatcher();
 
                      // Let the user know that the GPU is in use
@@ -800,7 +798,7 @@ PHYSX_API void createActorTriangleMesh(
       actor = createActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
-      material = px_physics->createMaterial(staticFriction, dynamicFriction, 
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
          restitution);
 
       // Convert the given array of vertex points to an array of PhysX vectors,
