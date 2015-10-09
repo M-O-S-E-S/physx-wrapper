@@ -58,8 +58,6 @@ static PxRigidStatic *                   ground_plane;
 
 static bool                              scene_initialized = false;
 
-static int                               aggregate_initialized = 0;
-
 static int                               max_updates;
 
 static atMap *                           aggregate_map = new atMap();
@@ -327,12 +325,14 @@ PHYSX_API void createAggregate(unsigned int id)
    PhysXAggregate * physXAggregate;
 
    // Try to get the PxAggregate pointer from the aggregate map
-   aggregate = (PxAggregate *) aggregate_map->getValue(new atInt(id));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(id));
 
    // If the aggregate returned exists, return the function call
    // because we cannot have multiple of the same id'd aggregates
-   if (aggregate != NULL)
+   if (physXAggregate != NULL)
+   {
       return;
+   }
 
    // Create a new PxAggregate from our PxPhysics instance
    aggregate = px_physics->createAggregate(128, false);
@@ -346,10 +346,10 @@ PHYSX_API void createAggregate(unsigned int id)
 
 PHYSX_API void removeAggregate(unsigned int id)
 {
-   PxAggregate * aggregate;
+   PhysXAggregate * aggregate;
 
    // Remove the aggregate from the map
-   aggregate = (PxAggregate *) aggregate_map->removeEntry(new atInt(id));
+   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(new atInt(id));
 
    // Clean up the aggregate if it existed
    if (aggregate != NULL)
@@ -358,48 +358,56 @@ PHYSX_API void removeAggregate(unsigned int id)
 
 PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
 {
-   PxAggregate * aggregate;
-   PhysXRigidActor * actor;
+   PhysXAggregate * physXAggregate;
+   PhysXRigidActor * physXActor;
 
    // Try to get the PxAggregate pointer from the aggregate map
-   aggregate = (PxAggregate *) aggregate_map->getValue(new atInt(aggregateId));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(aggregateId));
 
    // Try to get the PxActor pointer from the actor map
-   actor = (PhysXRigidActor *) getActor(actorId);
+   physXActor = (PhysXRigidActor *) getActor(actorId);
 
    // If there is no aggregate by the given id, return (0) || (false)
-   if (aggregate == NULL)
+   if (physXAggregate == NULL)
+   {
       return 0;
+   }
 
    // If there is no actor by the given id, return (0) || (false)
-   if(actor == NULL)
+   if(physXActor == NULL)
+   {
       return 0;
+   }
 
    // Return the result of adding the actor from the aggregate
-   return (int) aggregate->addActor(*actor->getActor());
+   return (int) physXAggregate->addActor(physXActor);
 }
 
 PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId)
 {
-   PxAggregate * aggregate;
-   PhysXRigidActor * actor;
+   PhysXAggregate * physXAggregate;
+   PhysXRigidActor * physXActor;
 
    // Try to get the PxAggregate from the aggregate_map
-   aggregate = (PxAggregate *) aggregate_map->getValue(new atInt(aggregateId));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(aggregateId));
 
    // Try to get the PxActor pointer from the actor_map
-   actor = (PhysXRigidActor *) getActor(actorId);
+   physXActor = (PhysXRigidActor *) getActor(actorId);
 
-   // If there is no aggregate b the given id, return (0) || (false)
-   if (aggregate == NULL)
+   // If there is no aggregate by the given id, return (0) || (false)
+   if (physXAggregate == NULL)
+   {
       return 0;
+   }
 
    // If there is no actor by the given id, return (0) || (false)
-   if(actor == NULL)
+   if(physXActor == NULL)
+   {
       return 0;
+   }
 
    // Return the result of removing the actor from the aggregate
-   return (int) aggregate->removeActor(*actor->getActor());
+   return (int) physXAggregate->removeActor(physXActor);
 }
 
 PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)

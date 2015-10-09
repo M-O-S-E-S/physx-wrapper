@@ -33,7 +33,11 @@ PhysXAggregate::~PhysXAggregate()
 {
     // Clean up, and release the underlying PhysX aggregate
     if (px_aggregate != NULL)
+    {
         px_aggregate->release();
+    }
+
+    delete aggregate_id;
 }
 
 
@@ -41,7 +45,9 @@ void PhysXAggregate::setID(unsigned int id)
 {
     // Delete the current ID, if one already exists
     if (aggregate_id != NULL)
+    {
         delete aggregate_id;
+    }
 
     // Update the unique identifier of the aggregate
     aggregate_id = new atInt(id);
@@ -59,7 +65,9 @@ void PhysXAggregate::setAggregate(PxAggregate * aggregate)
 {
     // Remove the current existing aggregate
     if (px_aggregate != NULL)
+    {
         px_aggregate->release();
+    }
 
     // Update the underlying PhysX aggregate
     px_aggregate = aggregate;
@@ -70,4 +78,27 @@ PxAggregate * PhysXAggregate::getAggregate()
 {
     // Return the underlying PhysX aggregate held by this object
     return px_aggregate;
+}
+
+bool PhysXAggregate::addActor(PhysXRigidActor * actor)
+{
+    // Return the result of adding the actor to the
+    // PhysX PxAggregate object
+    return px_aggregate->addActor(*actor->getActor());
+}
+
+bool PhysXAggregate::removeActor(PhysXRigidActor * actor)
+{
+    // Return the result of removing the actor from the
+    // PhysX PxAggregate object
+    return px_aggregate->removeActor(*actor->getActor());
+}
+
+void PhysXAggregate::release()
+{
+    // Release the PhysX PxAggregate class from memory
+    px_aggregate->release();
+
+    // Remove and delete the aggregate identifier from memory
+    delete aggregate_id;
 }

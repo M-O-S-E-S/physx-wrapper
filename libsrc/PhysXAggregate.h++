@@ -23,7 +23,9 @@
 #ifndef PHYSX_AGGREGATE_H
 #define PHYSX_AGGREGATE_H
 
+
 #include "PxPhysicsAPI.h"
+#include "PhysXRigidActor.h++"
 
 #include "atInt.h++"
 #include "atItem.h++"
@@ -68,6 +70,24 @@ class PhysXAggregate : public atItem
         /// @return The underlying PhysX PxAggregate held by this object.
         ///
         PxAggregate * getAggregate();
+
+        /// Adds the given PhysX RigidActor to the PxAggregate.
+        ///
+        /// @return void
+        ///
+        bool addActor(PhysXRigidActor * actor);
+
+        /// Removes the given PhysX RigidActor from the PxAggregate.
+        ///
+        /// @return void
+        ///
+        bool removeActor(PhysXRigidActor * actor);
+
+        /// Removes and releases any memory used by this object.
+        ///
+        /// @return void
+        ///
+        void release();
     protected:
         /// The unique identifier of the PhysX PxAggregate.
         atInt * aggregate_id;
