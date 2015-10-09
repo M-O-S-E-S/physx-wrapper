@@ -58,8 +58,6 @@ static PxRigidStatic *                   ground_plane;
 
 static bool                              scene_initialized = false;
 
-static PxAggregate *                     px_aggregates;
-
 static int                               aggregate_initialized = 0;
 
 static int                               max_updates;
