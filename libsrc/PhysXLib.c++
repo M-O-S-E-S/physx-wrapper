@@ -319,6 +319,7 @@ PHYSX_API void initCollisionUpdate(
    }
 }
 
+
 PHYSX_API void createAggregate(unsigned int id)
 {
    PxAggregate * aggregate;
@@ -344,6 +345,7 @@ PHYSX_API void createAggregate(unsigned int id)
    aggregate_map->addEntry(new atInt(id), physXAggregate);
 }
 
+
 PHYSX_API void removeAggregate(unsigned int id)
 {
    PhysXAggregate * aggregate;
@@ -355,6 +357,7 @@ PHYSX_API void removeAggregate(unsigned int id)
    if (aggregate != NULL)
       aggregate->release();
 }
+
 
 PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
 {
@@ -383,6 +386,7 @@ PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
    return (int) physXAggregate->addActor(physXActor);
 }
 
+
 PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId)
 {
    PhysXAggregate * physXAggregate;
@@ -401,7 +405,7 @@ PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId
    }
 
    // If there is no actor by the given id, return (0) || (false)
-   if(physXActor == NULL)
+   if (physXActor == NULL)
    {
       return 0;
    }
@@ -409,6 +413,7 @@ PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId
    // Return the result of removing the actor from the aggregate
    return (int) physXAggregate->removeActor(physXActor);
 }
+
 
 PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
 {

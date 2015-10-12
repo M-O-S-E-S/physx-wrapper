@@ -22,6 +22,7 @@
 
 #include "PhysXAggregate.h++"
 
+
 PhysXAggregate::PhysXAggregate(PxAggregate * aggregate, unsigned int aggregateId)
 {
     px_aggregate = aggregate;
@@ -54,10 +55,10 @@ void PhysXAggregate::setID(unsigned int id)
 }
 
 
-atInt PhysXAggregate::getID()
+atInt * PhysXAggregate::getID()
 {
     // Return the unique identifier of the aggregate
-    return *aggregate_id;
+    return aggregate_id;
 }
 
 
@@ -80,12 +81,14 @@ PxAggregate * PhysXAggregate::getAggregate()
     return px_aggregate;
 }
 
+
 bool PhysXAggregate::addActor(PhysXRigidActor * actor)
 {
     // Return the result of adding the actor to the
     // PhysX PxAggregate object
     return px_aggregate->addActor(*actor->getActor());
 }
+
 
 bool PhysXAggregate::removeActor(PhysXRigidActor * actor)
 {
@@ -94,6 +97,7 @@ bool PhysXAggregate::removeActor(PhysXRigidActor * actor)
     return px_aggregate->removeActor(*actor->getActor());
 }
 
+
 void PhysXAggregate::release()
 {
     // Release the PhysX PxAggregate class from memory
@@ -101,4 +105,42 @@ void PhysXAggregate::release()
 
     // Remove and delete the aggregate identifier from memory
     delete aggregate_id;
+}
+
+
+bool PhysXAggregate::equals(atItem * otherItem)
+{
+    PhysXAggregate * aggregateItem;
+
+    // Try to cast the other item to an instance of PhysXAggregate
+    aggregateItem = dynamic_cast<PhysXAggregate *>(otherItem);
+
+    // Check to see if the other item is valid
+    if(aggregateItem != NULL)
+    {
+        // Return the int comparison between the two identifiers
+        return this->getID()->getValue() == aggregateItem->getID()->getValue();
+    }
+
+    // Otherwise, the types of item's didn't match so return false
+    return false;
+}
+
+
+int PhysXAggregate::compare(atItem * otherItem)
+{
+    PhysXAggregate * aggregateItem;
+
+    // Try to cast the other item to an instance of PhysXAggregate
+    aggregateItem = dynamic_cast<PhysXAggregate *>(otherItem);
+
+    // Check to see if the other item is valid
+    if(aggregateItem != NULL)
+    {
+        // Return the int difference between the two identifiers
+        return this->getID()->getValue() - aggregateItem->getID()->getValue();
+    }
+
+    // Otherwise, return the default atItem comparison
+    return atItem::compare(otherItem);
 }

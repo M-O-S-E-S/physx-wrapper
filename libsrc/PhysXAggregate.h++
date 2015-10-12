@@ -57,7 +57,7 @@ class PhysXAggregate : public atItem
         ///
         /// @return The unique identifier of the PhysX PxAggregate.
         ///
-        atInt   getID();
+        atInt * getID();
             
         /// Updates the underlying PhysX PxAggregate held by this object.
         ///
@@ -79,9 +79,29 @@ class PhysXAggregate : public atItem
 
         /// Removes the given PhysX RigidActor from the PxAggregate.
         ///
+        /// @param actor The PhysXRigidActor to be removed
+        ///
         /// @return void
         ///
         bool removeActor(PhysXRigidActor * actor);
+
+        /// This method determines whether or not the PhysXAggregate object
+        /// is equal to the object that is passed as an argument.
+        ///
+        /// @param otherItem The other PhysXRigidActor atItem to be equated
+        /// 
+        /// @return bool
+        ///
+        bool equals(atItem * otherItem);
+
+        /// This method compares this PhysXAggregate object against the given
+        /// atItem argument.
+        ///
+        /// @param otherITem The other PhysXAggregate item to be compared to
+        ///
+        /// @return int
+        ///
+        int compare(atItem * otherItem);
 
         /// Removes and releases any memory used by this object.
         ///
