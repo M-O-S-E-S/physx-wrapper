@@ -71,7 +71,6 @@ static atNotifier *                      logger;
 struct EntityProperties
 {
    unsigned int   ID;
-   const char *   Name;
    float          PositionX;
    float          PositionY;
    float          PositionZ;
@@ -1501,6 +1500,10 @@ PHYSX_API void simulate(float time,
    EntityProperties *          updatedActors;
    atInt *                     actorID;
    unsigned int                numTransforms;
+   PxVec3                      position;
+   PxQuat                      rotation;
+   PxVec3                      velocity;
+   PxVec3                      angularVelocity;
 
    px_scene->lockRead();
 
@@ -1534,26 +1537,26 @@ PHYSX_API void simulate(float time,
       // TODO: temp use of prim types instead of Object type
 
       // Update the actor's position
-      PxVec3 position = activeTransforms[i].actor2World.p;
+      position = activeTransforms[i].actor2World.p;
       updatedActors[i].PositionX = position.x;
       updatedActors[i].PositionY = position.y;
       updatedActors[i].PositionZ = position.z;
 
       // Update the actor's orientation
-      PxQuat rotation = activeTransforms[i].actor2World.q;
+      rotation = activeTransforms[i].actor2World.q;
       updatedActors[i].RotationX = rotation.x;
       updatedActors[i].RotationY = rotation.y;
       updatedActors[i].RotationZ = rotation.z;
       updatedActors[i].RotationW = rotation.w;
 
       // Update the actor's velocity
-      PxVec3 velocity = actor->getLinearVelocity();
+      velocity = actor->getLinearVelocity();
       updatedActors[i].VelocityX = velocity.x;
       updatedActors[i].VelocityY = velocity.y;
       updatedActors[i].VelocityZ = velocity.z;
 
       // Update the actor's angular velocity
-      PxVec3 angularVelocity = actor->getAngularVelocity();
+      angularVelocity = actor->getAngularVelocity();
       updatedActors[i].AngularVelocityX = angularVelocity.x;
       updatedActors[i].AngularVelocityY = angularVelocity.y;
       updatedActors[i].AngularVelocityZ = angularVelocity.z;

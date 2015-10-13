@@ -29,7 +29,8 @@ debug = ARGUMENTS.get('debug', 0)
 # Base paths for external libraries (platform dependent)
 if buildTarget == 'win32.64bit':
    # PhysX
-   physxPath = ARGUMENTS.get('physxPath', 'W:/physX/PhysX-3.3.3/PhysXSDK')
+   physxPath = ARGUMENTS.get('physxPath',
+                             'L:/physX-3.3.3-1.3.3-src/PhysX-3.3/PhysXSDK')
    # pthread 
    pthreadPath = ARGUMENTS.get('pthreadPath', 'L:/pthread-win32-2.8.0')
    # ATLAS
@@ -147,7 +148,7 @@ elif buildTarget == 'win32.64bit':
    # /GR          = Enable C++ run-time type information
    # /Gd          = Use __cdecl calling convention
    # /Z7          = Generate debug information
-   compileFlags = Split('/nologo /MD /O2 /EHsc /W3 /Zc:forScope /GR /Gd /Z7')
+   compileFlags = Split('/nologo /MT /O2 /EHsc /W3 /Zc:forScope /GR /Gd /Z7')
 
    # Additional flags to disable useless warnings in Windows
    compileFlags += Split('/wd4091 /wd4275 /wd4290 /wd4068')
