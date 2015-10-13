@@ -377,7 +377,7 @@ PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
    }
 
    // If there is no actor by the given id, return (0) || (false)
-   if(physXActor == NULL)
+   if (physXActor == NULL)
    {
       return 0;
    }

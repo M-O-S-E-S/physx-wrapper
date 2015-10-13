@@ -25,7 +25,10 @@
 
 PhysXAggregate::PhysXAggregate(PxAggregate * aggregate, unsigned int aggregateId)
 {
+    // Set the PhysX PxAggregate instance as given
     px_aggregate = aggregate;
+
+    // Initialize the aggregate identifier as a new atInt
     aggregate_id = new atInt(aggregateId);
 }
 
@@ -116,7 +119,7 @@ bool PhysXAggregate::equals(atItem * otherItem)
     aggregateItem = dynamic_cast<PhysXAggregate *>(otherItem);
 
     // Check to see if the other item is valid
-    if(aggregateItem != NULL)
+    if (aggregateItem != NULL)
     {
         // Return the int comparison between the two identifiers
         return this->getID()->getValue() == aggregateItem->getID()->getValue();
@@ -135,7 +138,7 @@ int PhysXAggregate::compare(atItem * otherItem)
     aggregateItem = dynamic_cast<PhysXAggregate *>(otherItem);
 
     // Check to see if the other item is valid
-    if(aggregateItem != NULL)
+    if (aggregateItem != NULL)
     {
         // Return the int difference between the two identifiers
         return this->getID()->getValue() - aggregateItem->getID()->getValue();
