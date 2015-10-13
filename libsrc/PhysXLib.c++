@@ -336,6 +336,8 @@ PHYSX_API void createAggregate(unsigned int id)
    }
 
    // Create a new PxAggregate from our PxPhysics instance
+   // With a limitation of 128 entities per aggregate instance
+   // (Hard limit imposed by the PhysX engine)
    aggregate = px_physics->createAggregate(128, false);
 
    // Create a new container to hold our aggregate instance
