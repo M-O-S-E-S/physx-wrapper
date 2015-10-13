@@ -218,7 +218,6 @@ extern "C"
    ///
    void createAggregate(unsigned int id);
 
-
    /// Method to remove a PxAggregate that stores scene actors.
    ///
    /// @param id The id of the aggregate to be destroyed.
