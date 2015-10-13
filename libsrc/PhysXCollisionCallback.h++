@@ -69,7 +69,7 @@ class PhysXCollisionCallback : public PxSimulationEventCallback
       /// @return An array of collision properties that hold the information
       /// about the collisions that occurred this frame.
       ///
-      CollisionProperties * getCollisions(uint * nbCollisions);
+      CollisionProperties *   getCollisions(uint * nbCollisions);
 
       /// Method to store the array of collisions for the collision callback 
       /// class.
@@ -78,19 +78,19 @@ class PhysXCollisionCallback : public PxSimulationEventCallback
       /// memory for information transfer between managed and unmanaged code.
       /// @param max The maximum number of collisions that the array can hold.
       ///
-      void setCollisionsArray(CollisionProperties * collisions, int max);
+      void   setCollisionsArray(CollisionProperties * collisions, int max);
 
       /// Inherited method that is currently not being used.
       ///
-      void onConstraintBreak(PxConstraintInfo * constraints, PxU32 count);
+      void   onConstraintBreak(PxConstraintInfo * constraints, PxU32 count);
 
       /// Inherited method that is currently not being used.
       ///
-      void onWake(PxActor ** actors, PxU32 count);
+      void   onWake(PxActor ** actors, PxU32 count);
       
       /// Inherited method that is currently not being used.
       ///
-      void onSleep(PxActor ** actors, PxU32 count);
+      void   onSleep(PxActor ** actors, PxU32 count);
       
       /// Inherited method that notifies us when contact events occur for 
       /// actors that have requested reporting.
@@ -101,10 +101,10 @@ class PhysXCollisionCallback : public PxSimulationEventCallback
       /// reports have been requested.
       /// @param nbPairs The number of provided contact pairs.
       ///
-      void onContact(const PxContactPairHeader& pairHeader, 
+      void   onContact(const PxContactPairHeader& pairHeader, 
          const PxContactPair * pairs, PxU32 nbPairs);
       
       /// Inherited method that is currently not being used.
       ///
-      void onTrigger(PxTriggerPair *, PxU32);
+      void   onTrigger(PxTriggerPair *, PxU32);
 };

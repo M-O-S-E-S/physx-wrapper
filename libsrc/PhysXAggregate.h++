@@ -51,31 +51,31 @@ class PhysXAggregate : public atItem
         ///
         /// @param id The new unique identifier of the PhysX PxAggregate.
         ///
-        void setID(unsigned int id);
+        void   setID(unsigned int id);
 
         /// Returns the unique identifier of the PhysX PxAggregate.
         ///
         /// @return The unique identifier of the PhysX PxAggregate.
         ///
-        atInt * getID();
+        atInt *   getID();
             
         /// Updates the underlying PhysX PxAggregate held by this object.
         ///
         /// @param aggregate The new underlying PhysX PxAggregate.
         ///
-        void setAggregate(PxAggregate * aggregate);
+        void   setAggregate(PxAggregate * aggregate);
 
         /// Returns the underlying PhysX PxAggregate held by this object.
         ///
         /// @return The underlying PhysX PxAggregate held by this object.
         ///
-        PxAggregate * getAggregate();
+        PxAggregate *   getAggregate();
 
         /// Adds the given PhysX RigidActor to the PxAggregate.
         ///
         /// @return void
         ///
-        bool addActor(PhysXRigidActor * actor);
+        bool   addActor(PhysXRigidActor * actor);
 
         /// Removes the given PhysX RigidActor from the PxAggregate.
         ///
@@ -83,7 +83,7 @@ class PhysXAggregate : public atItem
         ///
         /// @return void
         ///
-        bool removeActor(PhysXRigidActor * actor);
+        bool   removeActor(PhysXRigidActor * actor);
 
         /// This method determines whether or not the PhysXAggregate object
         /// is equal to the object that is passed as an argument.
@@ -92,7 +92,7 @@ class PhysXAggregate : public atItem
         /// 
         /// @return bool
         ///
-        bool equals(atItem * otherItem);
+        bool   equals(atItem * otherItem);
 
         /// This method compares this PhysXAggregate object against the given
         /// atItem argument.
@@ -101,13 +101,13 @@ class PhysXAggregate : public atItem
         ///
         /// @return int
         ///
-        int compare(atItem * otherItem);
+        int   compare(atItem * otherItem);
 
         /// Removes and releases any memory used by this object.
         ///
         /// @return void
         ///
-        void release();
+        void   release();
     protected:
         /// The unique identifier of the PhysX PxAggregate.
         atInt * aggregate_id;
