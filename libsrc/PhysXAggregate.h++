@@ -97,7 +97,7 @@ class PhysXAggregate : public atItem
         /// This method compares this PhysXAggregate object against the given
         /// atItem argument.
         ///
-        /// @param otherITem The other PhysXAggregate item to be compared to
+        /// @param otherItem The other PhysXAggregate item to be compared to
         ///
         /// @return int
         ///
