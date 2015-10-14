@@ -73,15 +73,11 @@ class PhysXAggregate : public atItem
 
         /// Adds the given PhysX RigidActor to the PxAggregate.
         ///
-        /// @return void
-        ///
         bool   addActor(PhysXRigidActor * actor);
 
         /// Removes the given PhysX RigidActor from the PxAggregate.
         ///
         /// @param actor The PhysXRigidActor to be removed
-        ///
-        /// @return void
         ///
         bool   removeActor(PhysXRigidActor * actor);
 
@@ -90,7 +86,7 @@ class PhysXAggregate : public atItem
         ///
         /// @param otherItem The other PhysXRigidActor atItem to be equated
         /// 
-        /// @return bool
+        /// @return bool representing if the two atItems are equal or not
         ///
         bool   equals(atItem * otherItem);
 
@@ -99,7 +95,7 @@ class PhysXAggregate : public atItem
         ///
         /// @param otherItem The other PhysXAggregate item to be compared to
         ///
-        /// @return int
+        /// @return int representing the comparison on the two atItems
         ///
         int   compare(atItem * otherItem);
 
