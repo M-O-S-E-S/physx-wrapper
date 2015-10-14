@@ -340,6 +340,13 @@ PHYSX_API void createAggregate(unsigned int id)
    // (Hard limit imposed by the PhysX engine)
    aggregate = px_physics->createAggregate(128, false);
 
+   // Add the PhysX PxAggregate instance to the scene if the
+   // scene has already been initialized
+   if(scene_initialized == 1)
+   {
+      px_scene->addAggregate(*aggregate);
+   }
+
    // Create a new container to hold our aggregate instance
    physXAggregate = new PhysXAggregate(aggregate, id);
 
@@ -355,9 +362,17 @@ PHYSX_API void removeAggregate(unsigned int id)
    // Remove the aggregate from the map
    aggregate = (PhysXAggregate *) aggregate_map->removeEntry(new atInt(id));
 
+
+
    // Clean up the aggregate if it existed
    if (aggregate != NULL)
+   {
+      // Remove the PxAggregate instance from the scene
+      px_scene->removeAggregate(*aggregate->getAggregate());
+
+      // Release the memory used up by the PhysXAggregate
       aggregate->release();
+   }
 }
 
 
