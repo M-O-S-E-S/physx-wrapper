@@ -216,7 +216,7 @@ void startVisualDebugger()
    }
 
    // Create the ip address, port, and timeout for the connection
-   const char * pvd_host_ip = "10.171.195.129";
+   const char * pvd_host_ip = "127.0.0.1";
    int port = 5425;
    unsigned int timeout = 100;
 
