@@ -73,11 +73,17 @@ class PhysXAggregate : public atItem
 
         /// Adds the given PhysX RigidActor to the PxAggregate.
         ///
+        /// @param actor The PhysXRigidActor to be added
+        ///
+        /// @retrun bool representing if the actor was properly added
+        ///
         bool   addActor(PhysXRigidActor * actor);
 
         /// Removes the given PhysX RigidActor from the PxAggregate.
         ///
-        /// @param actor The PhysXRigidActor to be removed
+        /// @param actor The PhysXRigidActor to be added
+        ///
+        /// @retrun bool representing if the actor was properly removed
         ///
         bool   removeActor(PhysXRigidActor * actor);
 
