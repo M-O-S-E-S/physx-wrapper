@@ -322,11 +322,15 @@ PHYSX_API void initCollisionUpdate(
 
 PHYSX_API void createAggregate(unsigned int id)
 {
-   PxAggregate * aggregate;
-   PhysXAggregate * physXAggregate;
+   PxAggregate *   aggregate;
+   PhysXAggregate *   physXAggregate;
+   atInt *   tempId;
+
+   // Create and initialize the aggregate id as an atInt
+   tempId = new atInt(id);
 
    // Try to get the PxAggregate pointer from the aggregate map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(id));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
 
    // If the aggregate returned exists, return the function call
    // because we cannot have multiple of the same id'd aggregates
@@ -357,12 +361,15 @@ PHYSX_API void createAggregate(unsigned int id)
 
 PHYSX_API void removeAggregate(unsigned int id)
 {
-   PhysXAggregate * aggregate;
+   PhysXAggregate *   aggregate;
+   atInt *   aggregateId;
+
+   // Create the aggregate id as an atInt for storing
+   // the PhysXAggregate within the atMap
+   aggregateId = new atInt(id);
 
    // Remove the aggregate from the map
-   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(new atInt(id));
-
-
+   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(aggregateId);
 
    // Clean up the aggregate if it existed
    if (aggregate != NULL)
@@ -378,11 +385,15 @@ PHYSX_API void removeAggregate(unsigned int id)
 
 PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
 {
-   PhysXAggregate * physXAggregate;
-   PhysXRigidActor * physXActor;
+   PhysXAggregate *   physXAggregate;
+   PhysXRigidActor *   physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
 
    // Try to get the PxAggregate pointer from the aggregate map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(aggregateId));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
 
    // Try to get the PxActor pointer from the actor map
    physXActor = (PhysXRigidActor *) getActor(actorId);
@@ -408,9 +419,13 @@ PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId
 {
    PhysXAggregate * physXAggregate;
    PhysXRigidActor * physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
 
    // Try to get the PxAggregate from the aggregate_map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(new atInt(aggregateId));
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
 
    // Try to get the PxActor pointer from the actor_map
    physXActor = (PhysXRigidActor *) getActor(actorId);

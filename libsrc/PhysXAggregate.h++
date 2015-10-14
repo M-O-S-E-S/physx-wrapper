@@ -105,8 +105,6 @@ class PhysXAggregate : public atItem
 
         /// Removes and releases any memory used by this object.
         ///
-        /// @return void
-        ///
         void   release();
     protected:
         /// The unique identifier of the PhysX PxAggregate.
