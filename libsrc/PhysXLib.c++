@@ -183,7 +183,6 @@ PxFilterFlags contactFilterShader(PxFilterObjectAttributes attributes0,
       pairFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eTRIGGER_DEFAULT |
          PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
          PxPairFlag::eNOTIFY_CONTACT_POINTS;
-
       return PxFilterFlag::eDEFAULT;
    }
 
@@ -245,7 +244,7 @@ PHYSX_API int initialize()
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
-    
+ 
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
       PX_PHYSICS_VERSION, allocator_callback, error_callback);
@@ -256,7 +255,9 @@ PHYSX_API int initialize()
 
    // Return 0 (false) if the physics object could not be created
    if (px_physics == NULL)
+   {
       return 0;
+   }
 
    // Create a cooking object that will generate meshes
    px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation,
@@ -864,7 +865,9 @@ PHYSX_API void removeActor(unsigned int id)
 
    // Can't remove actor if scene has not been initialized yet
    if (scene_initialized == false)
+   {
       return;
+   }
 
    // Try and remove the given actor from the map and check to see
    // if the actor exists
@@ -940,7 +943,7 @@ PHYSX_API float getActorMass(unsigned int id)
    {
       return rigidActor->getMass();
    }
-
+   
    // Otherwise, return 0.0f
    return 0.0f;
 }
@@ -959,7 +962,7 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
    {
       return rigidActor->addForce(force);
    }
-
+   
    return false;
 }
 
@@ -1345,7 +1348,9 @@ PHYSX_API void addJoint(
    // can't have the same IDs for different joints
    physXJoint = (PhysXJoint *)joint_map->getValue(new atInt(jointID));
    if (physXJoint != NULL)
+   {
       return;
+   }
 
    // Get the actors associated with a joint from the given actor IDs
    actor1 = getActor(actorID1);
@@ -1498,7 +1503,6 @@ PHYSX_API void simulate(float time,
 {
    const PxActiveTransform *   activeTransforms;
    PxRigidDynamic *            actor;
-   EntityProperties *          updatedActors;
    atInt *                     actorID;
    unsigned int                numTransforms;
 
@@ -1516,10 +1520,6 @@ PHYSX_API void simulate(float time,
    numTransforms = 0;
    activeTransforms = px_scene->getActiveTransforms(numTransforms);
 
-   // New array to keep track of the physical properties of the active
-   // transforms
-   updatedActors = new EntityProperties[max_updates];
-
    // Go through all active actors
    for (unsigned int i = 0; i < numTransforms; i++)
    {
@@ -1535,45 +1535,48 @@ PHYSX_API void simulate(float time,
 
       // Update the actor's position
       PxVec3 position = activeTransforms[i].actor2World.p;
-      updatedActors[i].PositionX = position.x;
-      updatedActors[i].PositionY = position.y;
-      updatedActors[i].PositionZ = position.z;
+      update_array[i].PositionX = position.x;
+      update_array[i].PositionY = position.y;
+      update_array[i].PositionZ = position.z;
 
       // Update the actor's orientation
       PxQuat rotation = activeTransforms[i].actor2World.q;
-      updatedActors[i].RotationX = rotation.x;
-      updatedActors[i].RotationY = rotation.y;
-      updatedActors[i].RotationZ = rotation.z;
-      updatedActors[i].RotationW = rotation.w;
+      update_array[i].RotationX = rotation.x;
+      update_array[i].RotationY = rotation.y;
+      update_array[i].RotationZ = rotation.z;
+      update_array[i].RotationW = rotation.w;
 
       // Update the actor's velocity
       PxVec3 velocity = actor->getLinearVelocity();
-      updatedActors[i].VelocityX = velocity.x;
-      updatedActors[i].VelocityY = velocity.y;
-      updatedActors[i].VelocityZ = velocity.z;
+      update_array[i].VelocityX = velocity.x;
+      update_array[i].VelocityY = velocity.y;
+      update_array[i].VelocityZ = velocity.z;
 
       // Update the actor's angular velocity
       PxVec3 angularVelocity = actor->getAngularVelocity();
-      updatedActors[i].AngularVelocityX = angularVelocity.x;
-      updatedActors[i].AngularVelocityY = angularVelocity.y;
-      updatedActors[i].AngularVelocityZ = angularVelocity.z;
+      update_array[i].AngularVelocityX = angularVelocity.x;
+      update_array[i].AngularVelocityY = angularVelocity.y;
+      update_array[i].AngularVelocityZ = angularVelocity.z;
 
       // Save the actor's ID if one was saved in the actor's user data;
       // if the ID wasn't found, that means that this is an actor that
       // we are not keeping track of so just give it a default ID value
       if (actorID != NULL)
-         updatedActors[i].ID = actorID->getValue();
+         update_array[i].ID = actorID->getValue();
       else
-         updatedActors[i].ID = 0;
-
-      // Save the physical properties of this actor in the update array;
-      // this updates the array data in the calling application
-      update_array[i] = updatedActors[i];
+         update_array[i].ID = 0;
    }
 
    // Update the number of active transforms and collisions,
    // in this step, by reference
-   *updatedEntityCount = numTransforms;
+   if (numTransforms < max_updates)
+   {
+      *updatedEntityCount = numTransforms;
+   }
+   else
+   {
+      *updatedEntityCount = max_updates;
+   }
    px_collisions->getCollisions(updatedCollisionCount);
    px_scene->unlockRead();
 }
