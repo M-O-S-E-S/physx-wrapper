@@ -30,7 +30,7 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    PxTransform   actorPos;
 
    // Set the name of the class for the user notification messages
-   atNotifier::setName("[PhysXRigigActor] ");
+   atNotifier::setName("[PhysXRigidActor] ");
 
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z));
@@ -72,7 +72,7 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    PxTransform   actorPos;
 
    // Set the name of the class for the user notification messages
-   setName("[PhysXRigigActor] ");
+   setName("[PhysXRigidActor] ");
 
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z), rot);

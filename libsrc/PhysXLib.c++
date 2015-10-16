@@ -320,7 +320,7 @@ PHYSX_API void initCollisionUpdate(
 }
 
 
-PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
+PHYSX_API int createScene(bool gpuEnabled, int cpuMaxThreads)
 {
    PxDefaultCpuDispatcher *   cpuDispatcher;
    PxCudaContextManagerDesc   cudaManagerDesc;
@@ -451,40 +451,26 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
       #endif
    }
 
-   // This check will enable the CPU if the user wanted it enabled, but it will
-   // also recover from a GPU failure and initialise the CPU
-   if (!gpuEnabled || cpuEnabled)
+   // The CPU dispatcher is needed for interfacing with the application's
+   // thread pool; check if the scene description already has one
+   if (sceneDesc.cpuDispatcher == NULL)
    {
-      // The CPU dispatcher is needed for interfacing with the application's
-      // thread pool; check if the scene description already has one
-      if (sceneDesc.cpuDispatcher == NULL)
+      // No dispatcher found so create a new one with one worker thread to
+      // start
+      cpuDispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
+
+      // Return 0 (false) if CPU dispatcher failed to create
+      if (cpuDispatcher == NULL)
       {
-         // Confirm that the CPU was supposed to be used
-         if (!cpuEnabled)
-         {
-            // Since the CPU was not originally going to be in use assign 0 as
-            // the thread count to force the program to use the same thread as
-            // the wrapper
-            cpuMaxThreads = 0;
-         }
+         return 0;
+      }
+      else if (cpuDispatcher != NULL)
+      {
+         // Notify the user that the CPU is currently in use
+         logger->notify(AT_INFO, "CPU enabled.\n");
 
-         // No dispatcher found so create a new one with one worker thread to
-         // start
-         cpuDispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
-
-         // Return 0 (false) if CPU dispatcher failed to create
-         if (cpuDispatcher == NULL && !gpuEnabled)
-         {
-            return 0;
-         }
-         else if (cpuDispatcher != NULL)
-         {
-            // Notify the user that the CPU is currently in use
-            logger->notify(AT_INFO, "CPU enabled.\n");
-
-            // Assign the created dispatcher to the scene description
-            sceneDesc.cpuDispatcher = cpuDispatcher;
-         }
+         // Assign the created dispatcher to the scene description
+         sceneDesc.cpuDispatcher = cpuDispatcher;
       }
    }
 
