@@ -32,6 +32,7 @@
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
+#include "PhysXAggregate.h++"
 
 
 #ifdef _WIN32
@@ -59,6 +60,7 @@ static bool                              scene_initialized = false;
 
 static int                               max_updates;
 
+static atMap *                           aggregate_map = new atMap();
 static atMap *                           actor_map = new atMap();
 static atMap *                           joint_map = new atMap();
 
@@ -213,7 +215,7 @@ void startVisualDebugger()
    }
 
    // Create the ip address, port, and timeout for the connection
-   const char * pvd_host_ip = "10.171.195.129";
+   const char * pvd_host_ip = "127.0.0.1";
    int port = 5425;
    unsigned int timeout = 100;
 
@@ -238,13 +240,12 @@ void startVisualDebugger()
 
 //-----------------------------------------------------------------------------
 
-
 PHYSX_API int initialize()
 {
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
- 
+   
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
       PX_PHYSICS_VERSION, allocator_callback, error_callback);
@@ -320,7 +321,134 @@ PHYSX_API void initCollisionUpdate(
 }
 
 
-PHYSX_API int createScene(bool gpuEnabled, int cpuMaxThreads)
+PHYSX_API void createAggregate(unsigned int id)
+{
+   PxAggregate *   aggregate;
+   PhysXAggregate *   physXAggregate;
+   atInt *   tempId;
+
+   // Create and initialize the aggregate id as an atInt
+   tempId = new atInt(id);
+
+   // Try to get the PxAggregate pointer from the aggregate map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // If the aggregate returned exists, return the function call
+   // because we cannot have multiple of the same id'd aggregates
+   if (physXAggregate != NULL)
+   {
+      return;
+   }
+
+   // Create a new PxAggregate from our PxPhysics instance
+   // with a limitation of 128 entities per aggregate instance
+   // (Hard limit imposed by the PhysX engine)
+   aggregate = px_physics->createAggregate(128, false);
+
+   // Add the PhysX PxAggregate instance to the scene if the
+   // scene has already been initialized
+   if(scene_initialized == 1)
+   {
+      px_scene->addAggregate(*aggregate);
+   }
+
+   // Create a new container to hold our aggregate instance
+   physXAggregate = new PhysXAggregate(aggregate, id);
+
+   // Add a new entry for the PxAggregate to our aggregate_map
+   aggregate_map->addEntry(new atInt(id), physXAggregate);
+}
+
+
+PHYSX_API void removeAggregate(unsigned int id)
+{
+   PhysXAggregate *   aggregate;
+   atInt *   aggregateId;
+
+   // Create the aggregate id as an atInt for storing
+   // the PhysXAggregate within the atMap
+   aggregateId = new atInt(id);
+
+   // Remove the aggregate from the map
+   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(aggregateId);
+
+   // Clean up the aggregate if it existed
+   if (aggregate != NULL)
+   {
+      // Remove the PxAggregate instance from the scene
+      px_scene->removeAggregate(*aggregate->getAggregate());
+
+      // Release the memory used up by the PhysXAggregate
+      aggregate->release();
+   }
+}
+
+
+PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
+{
+   PhysXAggregate *   physXAggregate;
+   PhysXRigidActor *   physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
+
+   // Try to get the PxAggregate pointer from the aggregate map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // Try to get the PxActor pointer from the actor map
+   physXActor = (PhysXRigidActor *) getActor(actorId);
+
+   // If there is no aggregate by the given id, return (0) || (false)
+   if (physXAggregate == NULL)
+   {
+      return 0;
+   }
+
+   // If there is no actor by the given id, return (0) || (false)
+   if (physXActor == NULL)
+   {
+      return 0;
+   }
+
+   // Return the result of adding the actor from the aggregate
+   return (int) physXAggregate->addActor(physXActor);
+}
+
+
+PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId)
+{
+   PhysXAggregate * physXAggregate;
+   PhysXRigidActor * physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
+
+   // Try to get the PxAggregate from the aggregate_map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // Try to get the PxActor pointer from the actor_map
+   physXActor = (PhysXRigidActor *) getActor(actorId);
+
+   // If there is no aggregate by the given id, return (0) || (false)
+   if (physXAggregate == NULL)
+   {
+      return 0;
+   }
+
+   // If there is no actor by the given id, return (0) || (false)
+   if (physXActor == NULL)
+   {
+      return 0;
+   }
+
+   // Return the result of removing the actor from the aggregate
+   return (int) physXAggregate->removeActor(physXActor);
+}
+
+
+PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
 {
    PxDefaultCpuDispatcher *   cpuDispatcher;
    PxCudaContextManagerDesc   cudaManagerDesc;
@@ -409,15 +537,15 @@ PHYSX_API int createScene(bool gpuEnabled, int cpuMaxThreads)
                }
                else
                {
-                  // Finish creating the PhysX CUDA context manager description 
-                  // by storing the CUDA context and a NULL graphics device 
+                  // Finish creating the PhysX CUDA context manager description
+                  // by storing the CUDA context and a NULL graphics device
                   cudaManagerDesc.ctx = &cudaContext;
                   cudaManagerDesc.graphicsDevice = (void *) NULL;
 
                   // Attempt to create the PhysX CUDA context manager
                   cudaContextManager = PxCreateCudaContextManager(
                      *px_foundation, cudaManagerDesc, profileZoneManager);
-                  
+
                   // Check that the PhysX CUDA context manager was created
                   if (cudaContextManager == NULL)
                   {
@@ -436,7 +564,7 @@ PHYSX_API int createScene(bool gpuEnabled, int cpuMaxThreads)
                   else
                   {
                      // The GPU dispatcher is ready so add it to the scene
-                     sceneDesc.gpuDispatcher = 
+                     sceneDesc.gpuDispatcher =
                         cudaContextManager->getGpuDispatcher();
 
                      // Let the user know that the GPU is in use
@@ -700,7 +828,7 @@ PHYSX_API void createActorTriangleMesh(
       actor = createActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
-      material = px_physics->createMaterial(staticFriction, dynamicFriction, 
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
          restitution);
 
       // Convert the given array of vertex points to an array of PhysX vectors,

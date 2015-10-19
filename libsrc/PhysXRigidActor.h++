@@ -122,13 +122,13 @@ class PhysXRigidActor : public atItem
       /// 
       /// @param id The new identifier for this actor.
       ///
-      void             setID(unsigned int id);
+      void   setID(unsigned int id);
       
       /// Method to fetch the current identifier for this actor.
       ///
       /// @return The atInt object's get value will be the identifier for this 
       /// object. 
-      atInt *          getID();
+      atInt *   getID();
 
       /// Method to get the PhysX representation of this actor as a
       /// PxActor instance.
@@ -136,7 +136,7 @@ class PhysXRigidActor : public atItem
       /// @return The object that represents the PhysX actor inside of the 
       /// PhysX scene.
       ///
-      PxActor *        getActor();
+      PxActor *   getActor();
 
       /// Method to get the PhysX representation of this actor as a
       /// PxRigidActor instance.
@@ -149,25 +149,25 @@ class PhysXRigidActor : public atItem
       ///
       /// @param shape The shape that is being attached to the actor.
       ///
-      void             setShape(PxShape * shape);
+      void   setShape(PxShape * shape);
       
       /// Fetches the shape that is currently attached to the actor.
       ///
       /// @return The shape that is currently attached to the actor.
       ///
-      PxShape *        getShape();
+      PxShape *   getShape();
 
       /// Changes the name of the actor.
       ///
       /// @param name The new name of the actor.
       ///
-      void             setName(char * name);
+      void   setName(char * name);
       
       /// Fetch the current name of the actor.
       ///
       /// @return The current name of the actor.
       ///
-      atString *       getName();
+      atString *   getName();
 
       /// Set the density for an actor (only valid for dynamic actors).
       ///
@@ -175,7 +175,7 @@ class PhysXRigidActor : public atItem
       ///
       /// @return bool Whether the update was successful or not.
       ///
-      bool setDensity(float density);
+      bool   setDensity(float density);
 
       /// Set the mass for an actor (only valid for dynamic actors).
       ///
@@ -183,19 +183,19 @@ class PhysXRigidActor : public atItem
       ///
       /// @return bool Whether the update was successful or not.
       ///
-      bool setMass(float mass);
+      bool   setMass(float mass);
 
       /// Get the mass for an actor (only valid for dynamic actors).
       ///
       /// @return float The mass of the physics actor.
       ///
-      float getMass();
+      float   getMass();
 
       /// Applies a force (or impulse) to the actor as set by PhysX flags.
       ///
       /// @return bool If the force was applied.
       ///
-      bool addForce(PxVec3 vector);
+      bool   addForce(PxVec3 vector);
 
       /// Changes the position and orientation of the actor.
       ///
@@ -211,7 +211,7 @@ class PhysXRigidActor : public atItem
       /// @param rotW The w value of the quaternion that represents the new 
       /// orientation of this actor.
       ///
-      void             setTranslation(float posX, float posY, float posZ,
+      void   setTranslation(float posX, float posY, float posZ,
                           float rotX, float rotY, float rotZ, float rotW);
 
       /// Changes the position of the actor.
@@ -220,14 +220,14 @@ class PhysXRigidActor : public atItem
       /// @param y The y value of the new position for this actor.
       /// @param z The z value of the new position for this actor.
       ///
-      void             setPosition(float x, float y, float z);
+      void   setPosition(float x, float y, float z);
       
       /// Fetch the current position of this actor.
       ///
       /// @return An array with the current position of the actor. The values
       /// of the array are [x, y, z].
       ///
-      float *          getPosition();
+      float *   getPosition();
 
       /// Changes the orientation of this actor.
       ///
@@ -240,14 +240,14 @@ class PhysXRigidActor : public atItem
       /// @param w The w value of the quaternion that represents the new 
       /// orientation of this actor.
       ///
-      void             setRotation(float x, float y, float z, float w);
+      void   setRotation(float x, float y, float z, float w);
 
       /// Fetch the current orientation of this actor.
       ///
       /// @return An array with the current quaternion that represents the 
       /// orientation for this actor. The values of the array are [x, y, z, w].
       ///
-      float *          getRotation();
+      float *   getRotation();
 
       /// Changes the linear velocity for this actor.
       ///
@@ -255,7 +255,7 @@ class PhysXRigidActor : public atItem
       /// @param y The new velocity in the y direction for this actor.
       /// @param z The new velocity in the z direction for this actor.
       ///
-      void             setLinearVelocity(float x, float y, float z);
+      void   setLinearVelocity(float x, float y, float z);
 
       /// Changes the angular velocity for this actor.
       ///
@@ -263,7 +263,7 @@ class PhysXRigidActor : public atItem
       /// @param y The new velocity in the y direction for this actor.
       /// @param z The new velocity in the z direction for this actor.
       ///
-      void             setAngularVelocity(float x, float y, float z);
+      void   setAngularVelocity(float x, float y, float z);
 
       /// Changes the direction of gravity acting on this actor.
       ///
@@ -274,14 +274,14 @@ class PhysXRigidActor : public atItem
       /// @param z The new amount of gravity in the z direction acting on this 
       /// actor.
       ///
-      void             setGravity(float x, float y, float z);
+      void   setGravity(float x, float y, float z);
 
       /// Changes whether gravity is currently acting on this actor.
       ///
       /// @param enabled Flag that when true causes gravity to act upon the 
       /// actor and when false to not act upon the actor.
       ///
-      void             enableGravity(bool enabled);
+      void   enableGravity(bool enabled);
 };
 
 
