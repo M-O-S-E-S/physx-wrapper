@@ -28,6 +28,7 @@
 
 #include "atInt.h++"
 #include "atItem.h++"
+#include "atMap.h++"
 #include "atString.h++"
 
 
@@ -47,14 +48,15 @@ enum ActorType
 
 class PhysXRigidActor : public atItem
 {
-   private:
+   protected:
       /// Current PhysX actor reference.
       ///
       PxRigidActor *     rigid_actor;
 
-      /// Current PhysX shape that represents this actor in the physical scene.
+      /// The shapes that are attached to this actor and represent it in the
+      /// physical scene.
       ///
-      PxShape *          actor_shape;
+      atMap *            actor_shapes;
 
       /// The name of this actor.
       ///
@@ -69,6 +71,14 @@ class PhysXRigidActor : public atItem
       ///
       ActorType          actor_type;
 
+      /// Updates the densities associated PhysX actor based on the densities
+      /// of the various shapes attached to the actor.
+      ///
+      void               updateDensity();
+
+      /// The default density used when a given density is invalid
+      ///
+      static const float   default_density;
 
    public:
       /// Constructor
@@ -147,15 +157,42 @@ class PhysXRigidActor : public atItem
 
       /// Method to attach a shape to the PhysX actor.
       ///
+      /// @param shapeId The unique identifier of the shape being attached.
       /// @param shape The shape that is being attached to the actor.
+      /// @param density The density of the shape
       ///
-      void             setShape(PxShape * shape);
+      void             addShape(unsigned int shapeId, PxShape * shape,
+                          float density);
       
-      /// Fetches the shape that is currently attached to the actor.
+      /// Fetches a shape attached to the actor.
       ///
-      /// @return The shape that is currently attached to the actor.
+      /// @param The unique identifier of the desired shape.
+      /// @return The PhysX shape attached to the actor with the given ID.
+      /// Will be NULL if no shape was found with the given ID.
       ///
-      PxShape *        getShape();
+      PxShape *        getShape(unsigned int shapeId);
+
+      /// Updates the density of a given shape.
+      ///
+      /// @param shapeId The unique identifier of the desired shape.
+      /// @param density The new density of the shape.
+      ///
+      void             setShapeDensity(unsigned int shapeId, float density);
+
+      /// Detaches and deletes a shape currently attached to the actor.
+      ///
+      /// @param shapeId The unique identifier of the shape to be removed.
+      /// @remarks Note that the last shape of a PhysX static actor cannot be 
+      /// removed.
+      ///
+      void             detachShape(unsigned int shapeId);
+
+      /// Detaches and deletes all shapes currently attached to the actor.
+      ///
+      /// @remarks Note that the last shape of a PhysX static actor cannot be
+      /// removed.
+      ///
+      void             detachAllShapes();
 
       /// Changes the name of the actor.
       ///
@@ -168,22 +205,6 @@ class PhysXRigidActor : public atItem
       /// @return The current name of the actor.
       ///
       atString *       getName();
-
-      /// Set the density for an actor (only valid for dynamic actors).
-      ///
-      /// @param density The density of the actor.
-      ///
-      /// @return bool Whether the update was successful or not.
-      ///
-      bool setDensity(float density);
-
-      /// Set the mass for an actor (only valid for dynamic actors).
-      ///
-      /// @param mass The mass of the actor.
-      ///
-      /// @return bool Whether the update was successful or not.
-      ///
-      bool setMass(float mass);
 
       /// Get the mass for an actor (only valid for dynamic actors).
       ///
@@ -282,6 +303,13 @@ class PhysXRigidActor : public atItem
       /// actor and when false to not act upon the actor.
       ///
       void             enableGravity(bool enabled);
+
+      /// Set the density for an actor (only valid for dynamic actors).
+      ///
+      /// @param mass The mass of the actor.
+      /// @return bool Whether the update was successful or not.
+      ///
+      bool             setMass(float mass);
 };
 
 

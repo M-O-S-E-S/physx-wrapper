@@ -23,7 +23,7 @@ mainIncs.extend(Split('physxLib'))
 
 
 # Build-up subdirs and sublists of files within Hub
-physxlibSrc = Split('PhysXLib.c++ PhysXCollisionCallback.c++ PhysXJoint.c++ PhysXRigidActor.c++')
+physxlibSrc = Split('PhysXLib.c++ PhysXCollisionCallback.c++ PhysXJoint.c++ PhysXRigidActor.c++ PhysXShape.c++')
 
 
 # Collect together all the source files that make up Hub

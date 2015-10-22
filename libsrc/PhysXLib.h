@@ -103,8 +103,8 @@ struct EntityProperties;
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor * createActor(unsigned int id, char * name, float x, float y,
-   float z, bool isDynamic);
+PhysXRigidActor * createRigidActor(unsigned int id, char * name, float x,
+   float y, float z, bool isDynamic);
 
 /// Method to create an actor either dynamic or static with given id, name, and
 /// position.
@@ -121,8 +121,8 @@ PhysXRigidActor * createActor(unsigned int id, char * name, float x, float y,
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor * createActor(unsigned int id, char * name, float x, float y,
-   float z, PxQuat Rot, bool isDynamic);
+PhysXRigidActor * createRigidActor(unsigned int id, char * name, float x,
+   float y, float z, PxQuat Rot, bool isDynamic);
 
 /// Method to fetch the actor from the map of actors.
 /// 
@@ -212,6 +212,196 @@ extern "C"
    /// 
    void releaseScene();
 
+   /// Method to create an actor either dynamic or static with given id, name,
+   /// and position.
+   ///
+   /// @param id Id of the physical actor being created.
+   /// @param name Name of the physical actor being created.
+   /// @param x The x value of the position of the physical actor in the scene.
+   /// @param y The y value of the position of the physical actor in the scene.
+   /// @param z The z value of the position of the physical actor in the scene.
+   /// @param isDynamic Flag that will control whether the physical actor is a
+   /// RigidStatic or RigidDynamic.
+   ///
+   void createActor(unsigned int id, char * name, float x, float y, float z,
+      bool isDynamic);
+
+   /// Method to attach a sphere shape to an existing actor.
+   ///
+   /// @param id Unique identifier of the actor to which the shape is being 
+   /// attached.
+   /// @param shapeId Unique identifier of the shape being attached.
+   /// @param staticFriction The static friction to be used for this sphere
+   /// when sliding against other objects of the scene.
+   /// @param dynamicFriction The dynamic friction to be used for this sphere
+   /// when sliding against other objects of the scene.
+   /// @param restitution The bounciness of this shape when colliding with other
+   /// objects of the scene.
+   /// @param radius The radius of the sphere being attached.
+   /// @param x The position of the sphere along the x-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param y The position of the sphere along the y-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param z The position of the sphere along the z-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param density The density of the sphere.
+   ///
+   void attachSphere(unsigned int id, unsigned int shapeId,
+      float staticFriction, float dynamicFriction, float restitution,
+      float radius, float x, float y, float z, float density);
+
+   /// Method to attach a box shape to an existing actor.
+   ///
+   /// @param id Unique identifier of the actor to which the shape is being
+   /// attached.
+   /// @param shapeId Unique identifier of the shape being attached.
+   /// @param staticFriction The static friction to be used for this box
+   /// when sliding against other objects of the scene.
+   /// @param dynamicFriction The dynamic friction to be used for this box
+   /// when sliding against other objects of the scene.
+   /// @param restitution The bounciness of this shape when colliding with other
+   /// objects of the scene.
+   /// @param halfX Half the length of the box.
+   /// @param halfY Half the width of the box.
+   /// @param halfZ Half the height of the box.
+   /// @param x The position of the box along the x-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param y The position of the box along the y-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param z The position of the box along the z-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param rotX The x-value of the quaternion representing orientation of the
+   /// box relative to the actor.
+   /// @param rotY The y-value of the quaternion representing orientation of the
+   /// box relative to the actor.
+   /// @param rotZ The z-value of the quaternion representing orientation of the
+   /// box relative to the actor.
+   /// @param rotW The w-value of the quaternion representing orientation of the
+   /// box relative to the actor.
+   /// @param density The density of the box.
+   ///
+   void attachBox(unsigned int id, unsigned int shapeId, float staticFriction,
+      float dynamicFriction, float restitution, float halfX, float halfY,
+      float halfZ, float x, float y, float z, float rotX, float rotY,
+      float rotZ, float rotW, float density);
+
+   /// Method to attach a capsule shape to an existing actor.
+   ///
+   /// @param id Unique identifier of the actor to which the shape is being
+   /// attached.
+   /// @param shapeId Unique identifier of the shape being attached.
+   /// @param staticFriction The static friction to be used for this capsule
+   /// when sliding against other objects of the scene.
+   /// @param dynamicFriction The dynamic friction to be used for this capsule
+   /// when sliding against other objects of the scene.
+   /// @param restitution The bounciness of this shape when colliding with other
+   /// objects of the scene.
+   /// @param halfHeight Half the height of the capsule.
+   /// @param radius The radius of the capsule.
+   /// @param x The position of the capsule along the x-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param y The position of the capsule along the y-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param z The position of the capsule along the z-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param rotX The x-value of the quaternion representing the orientation
+   /// of the capsule relative to the actor.
+   /// @param rotY The y-value of the quaternion representing the orientation
+   /// of the capsule relative to the actor.
+   /// @param rotZ The z-value of the quaternion representing the orientation
+   /// of the capsule relative to the actor.
+   /// @param rotW The w-value of the quaternion representing the orientation
+   /// of the capsule relative to the actor.
+   /// @param density The density of the capsule.
+   ///
+   void attachCapsule(unsigned int id, unsigned int shapeId,
+      float staticFriction, float dynamicFriction, float restitution,
+      float halfHeight, float radius, float x, float y, float z, float rotX,
+      float rotY, float rotZ, float rotW, float density);
+
+   /// Method to attach a triangle mesh shape to an existing actor.
+   ///
+   /// @param id Unique identifier of the actor to which the shape is being
+   /// attached.
+   /// @param shapeId Unique identifier of the shape being attached.
+   /// @param staticFriction The static friction to be used for this mesh
+   /// when sliding against other objects of the scene.
+   /// @param dynamicFriction The dynamic friction to be used for this mesh
+   /// when sliding against other objects of the scene.
+   /// @param restitution The bounciness of this shape when colliding with other
+   /// objects of the scene.
+   /// @param vertices The list of vertices that make up the triangle mesh.
+   /// @param indices The list of indices that define the triangles in the mesh.
+   /// @param vertexCount The number of vertices given for this mesh.
+   /// @param indexCount The number of indices given for this mesh.
+   /// @param x The position of the mesh along the x-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param y The position of the mesh along the y-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param z The position of the mesh along the z-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param rotX The x-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotY The y-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotZ The z-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotW The w-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   ///
+   /// @remarks Triangle Meshes can only be attached to dynamic
+   /// actors, so this method will fail if the given ID belongs to a static
+   /// actor.
+   ///
+   void attachTriangleMesh(unsigned int id, unsigned int shapeId,
+      float staticFriction, float dynamicFriction, float restitution,
+      float * vertices, float * indices, int vertexCount, int indexCount,
+      float x, float y, float z, float rotX, float rotY, float rotZ,
+      float rotW);
+
+   /// Method to attach a convex mesh to an existing actor.
+   ///
+   /// @param id Unique identifier of the actor to which the shape is being
+   /// attached.
+   /// @param shapeId Unique identifier of the shape being attached.
+   /// @param staticFriction The static friction to be used for this mesh
+   /// when sliding against other objects of the scene.
+   /// @param dynamicFriction The dynamic friction to be used for this mesh
+   /// when sliding against other objects of the scene.
+   /// @param restitution The bounciness of this shape when colliding with other
+   /// objects of hte scene
+   /// @param vertices The list of vertices that make up the convex mesh.
+   /// @param vertexCount The size of the list of vertices.
+   /// @param x The position of the mesh along the x-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param y The position of the mesh along the y-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param z The position of the mesh along the z-axis relative to the
+   /// position of the actor to which the sphere is being attached.
+   /// @param rotX The x-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotY The y-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotZ The z-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param rotW The w-value of the quaternion representing the orientation
+   /// of the mesh relative to the actor.
+   /// @param density The density of the convex mesh.
+   ///
+   void attachConvexMesh(unsigned int id, unsigned int shapeId,
+      float staticFriction, float dynamicFriction, float restitution,
+      float * vertices, int vertexCount, float x, float y, float z, float rotX,
+      float rotY, float rotZ, float rotW, float density);
+
+   /// Method to remove and delete a shape attached to an actor.
+   ///
+   /// @param id The unique identifier of the actor from which the shape
+   /// should be deleted.
+   /// @param shapeId The unique identifier of the shape to be removed &
+   /// deleted.
+   ///
+   void removeShape(unsigned int id, unsigned int shapeId);
+
    /// Method to create a sphere actor in the physical scene.
    ///
    /// @param id The id of the actor.
@@ -222,6 +412,8 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
+   /// @param shapeId The unique identifier of the sphere shape being attached
+   /// to the actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -234,8 +426,9 @@ extern "C"
    /// actor.
    ///
    void createActorSphere(unsigned int id, char * name, float x, float y, 
-      float z, float staticFriction, float dynamicFriction, float restitution,
-      float radius, float density, bool isDynamic);
+      float z, unsigned int shapeId, float staticFriction,
+      float dynamicFriction, float restitution, float radius, float density,
+      bool isDynamic);
 
    /// Method to create a box actor in the physical scene.
    ///
@@ -247,6 +440,8 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
+   /// @param shapeId The unique identifier of the box shape being attached to
+   /// the actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -261,8 +456,9 @@ extern "C"
    /// actor.
    ///
    void createActorBox(unsigned int id, char * name, float x, float y, 
-      float z, float staticFriction, float dynamicFriction, float restitution,
-      float halfX, float halfY, float halfZ, float density, bool isDynamic);
+      float z, unsigned int shapeId, float staticFriction,
+      float dynamicFriction, float restitution, float halfX, float halfY,
+      float halfZ, float density, bool isDynamic);
 
    /// Method to create a capsule actor in the physical scene.
    ///
@@ -274,14 +470,16 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
-   /// @param rotX The x value of the quaternion representing the new rotation 
-   /// of the actor in the physical scene.
-   /// @param rotY The y value of the quaternion representing the new rotation 
-   /// of the actor in the physical scene.
-   /// @param rotZ The z value of the quaternion representing the new rotation 
-   /// of the actor in the physical scene.
-   /// @param rotW The w value of the quaternion representing the new rotation 
-   /// of the actor in the physical scene.
+   /// @param shapeId The unique identifier of the capsule shape being attached
+   /// to the actor.
+   /// @param rotX The x value of the quaternion representing the orientation 
+   /// of the capsule shape relative to the actor.
+   /// @param rotY The y value of the quaternion representing the orientation 
+   /// of the capsule shape relative to the actor.
+   /// @param rotZ The z value of the quaternion representing the orientation 
+   /// of the capsule shape relative to the actor.
+   /// @param rotW The w value of the quaternion representing the orientation 
+   /// of the capsule shape relative to the actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -295,9 +493,10 @@ extern "C"
    /// actor.
    ///
    void createActorCapsule(unsigned int id, char * name, float x, float y, 
-      float z, float rotX, float rotY, float rotZ, float rotW, 
-      float staticFriction, float dynamicFriction, float restitution,
-      float halfHeight, float radius, float density, bool isDynamic);
+      float z, unsigned int shapeId, float rotX, float rotY, float rotZ,
+      float rotW, float staticFriction, float dynamicFriction,
+      float restitution, float halfHeight, float radius, float density,
+      bool isDynamic);
 
    /// Method to create a triangle mesh actor in the physical scene.
    ///
@@ -309,6 +508,8 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
+   /// @param shapeId The unique identifier of the mesh being attached to
+   /// actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -324,9 +525,9 @@ extern "C"
    /// actor.
    ///
    void createActorTriangleMesh(unsigned int id, char * name, float x, float y, 
-      float z, float staticFriction, float dynamicFriction, float restitution,
-      float * vertices, float * indices, int vertexCount, int indexCount, 
-      bool isDynamic);
+      float z, unsigned int shapeId, float staticFriction,
+      float dynamicFriction, float restitution, float * vertices,
+      float * indices, int vertexCount, int indexCount, bool isDynamic);
 
    /// Method to create a convex mesh actor in the physical scene.
    ///
@@ -338,6 +539,8 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
+   /// @param shapeId The unique identifier of the mesh being attached to the
+   /// actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -347,12 +550,14 @@ extern "C"
    /// @param vertices The list of vertices of the mesh that make up the 
    /// convex mesh.
    /// @param vertexCount The size of the list of vertices.
+   /// @param density The density of the mesh.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorTriangleMesh(unsigned int id, char * name, float x, float y, 
-      float z, float staticFriction, float dynamicFriction, float restitution,
-      float * vertices, int vertexCount, bool isDynamic);
+   void createActorConvexMesh(unsigned int id, char * name, float x, float y, 
+      float z, unsigned int shapeId, float staticFriction,
+      float dynamicFriction, float restitution, float * vertices,
+      int vertexCount, float density, bool isDynamic);
 
    /// Remove an actor from the physical scene.
    ///
@@ -360,23 +565,20 @@ extern "C"
    ///
    void removeActor(unsigned int id);
 
-   /// Update the density of a physical actor.
+   /// Updates various physical properties of a shape.
    ///
-   /// @param id The id of the actor to be updated.
-   /// @param density The updated density of the actor.
+   /// @param id The unique identifier of the actor to which the shape is
+   /// attached.
+   /// @param shapeId The unique identifier of the shape whose material
+   /// properties are being modified.
+   /// @param staticFriction The new static friction that will be used
+   /// for the shape when sliding against other objects in the scene.
+   /// @param dynamicFriction the new dynamic friction that will be used
+   /// for the shape when sliding against other objects in the scene.
+   /// @param restitution The bounciness of this shape.
    ///
-   /// @return If the mass was updated
-   ///
-   bool updateActorDensity(unsigned int id, float density);
-
-   /// Update the mass of a physical actor.
-   ///
-   /// @param id The id of the actor to be updated.
-   /// @param mass The updated density of the actor.
-   ///
-   /// @return If the mass was updated
-   ///
-   bool updateActorMass(unsigned int id, float mass);
+   void updateMaterialProperties(unsigned int id, unsigned int shapeId,
+      float staticFriction, float dynamicFriction, float restitution);
 
    /// Get the mass of a physical actor.
    ///
@@ -482,6 +684,25 @@ extern "C"
    ///
    void enableGravity(unsigned int id, bool enabled);
 
+   /// Updates the density of given shape attached to a given actor.
+   ///
+   /// @param id The unique identifier of the actor to which the desired shape
+   /// is attached.
+   /// @param shapeID The unique identifier of the desired shape.
+   /// @param density The new density of the shape.
+   ///
+   void updateShapeDensity(unsigned int id, unsigned int shapeID,
+      float density);
+
+   /// Update the mass of a physical actor.
+   ///
+   /// @param id The id of the actor to be updated.
+   /// @param mass The updated density of the actor.
+   ///
+   /// @return If the mass was updated
+   ///
+   bool updateActorMass(unsigned int id, float mass);
+
    /// Method to create a ground plane to prevent actors from falling forever.
    /// 
    /// @param x The x value of the position where the plane should be created.
@@ -508,7 +729,8 @@ extern "C"
    /// @param posts The array of height values that will be used to generate
    /// the height field.
    ///
-   void setHeightField(int terrainShapeID, int regionSizeX, int regionSizeY, 
+   void setHeightField(unsigned int terrainActorID,
+      unsigned int terrainShapeID, int regionSizeX, int regionSizeY, 
       float rowSpacing, float columnSpacing, float * posts);
 
    /// Add a joint between two actors.

@@ -22,6 +22,12 @@
 
 
 #include "PhysXRigidActor.h++"
+#include "PhysXShape.h++"
+
+
+// Initialize the default density that will be used in case a supplied density
+// is invalid
+const float PhysXRigidActor::default_density = 1000.0006836f;
 
 
 PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
@@ -59,7 +65,10 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    actor_type = type;
 
    // Assign the ID to the actor's user data
-   rigid_actor->userData = (void *)actor_id;
+   rigid_actor->userData = actor_id;
+
+   // Create the map that will hold the various shapes attached to this actor
+   actor_shapes = new atMap();
 }
 
 
@@ -98,12 +107,20 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    actor_type = type;
 
    // Assign the ID to the actor's user data
-   rigid_actor->userData = (void *)actor_id;
+   rigid_actor->userData = actor_id;
+
+   // Create the map that will hold the various shapes attached to this actor
+   actor_shapes = new atMap();
 }
 
 
 PhysXRigidActor::~PhysXRigidActor()
 {
+   // Clean up the map containing the shape attached to this actor
+   delete actor_shapes;
+
+   delete actor_id;
+
    // Clean up the PxActor; this will also delete the actor
    // ID since it's reference is kept in the actor's user data
    if (rigid_actor != NULL)
@@ -123,6 +140,8 @@ void PhysXRigidActor::setID(unsigned int id)
 
    // Save the new identifier to an atInt in order to use the atMap
    actor_id = new atInt(id);
+
+   rigid_actor->userData = actor_id;
 }
 
 
@@ -148,20 +167,147 @@ PxRigidActor * PhysXRigidActor::getRigidActor()
 }
 
 
-void PhysXRigidActor::setShape(PxShape * shape)
+void PhysXRigidActor::addShape(unsigned int shapeId, PxShape * shape,
+   float density)
 {
+   atInt *        tempId;
+   PhysXShape *   newShape;
+
+   // Convert the given shape ID into an atInt, so that it can be used with
+   // the shape map
+   tempId = new atInt(shapeId);
+
+   // Check to see if the this actor has a shape already with the given ID
+   if (actor_shapes->getValue(tempId) != NULL)
+   {
+      // Clean up the ID an exit, so that the existing shape is not overwritten
+      notify(AT_WARN, "Failed to attach shape! Actor already contains shape "
+         "with given ID (%u).\n", shapeId);
+      delete tempId;
+      return;
+   }
+
+   // Create a new shape container to hold the information for the shape
+   newShape = new PhysXShape(new atInt(shapeId), shape, density);
+
+   // Create an entry for the new shape in the shape map
+   actor_shapes->addEntry(tempId, newShape);
+
    // Attach the new shape to the PhysX actor
    rigid_actor->attachShape(*shape);
 
-   // Store the new shape to the instance field
-   actor_shape = shape;
+   // Now that a new shape has been attached, the densities have to be updated
+   updateDensity();
 }
 
 
-PxShape * PhysXRigidActor::getShape()
+PxShape * PhysXRigidActor::getShape(unsigned int shapeId)
 {
-   // Return the current shape of this object
-   return actor_shape;
+   atInt *        tempId;
+   PhysXShape *   shapeObj;
+   PxShape *      result;
+
+   // Convert the given ID into an atInt, so that it can be used to check the
+   // map
+   tempId = new atInt(shapeId);
+
+   // Retrieve the shape attached to this actor with the given ID
+   shapeObj = (PhysXShape*) actor_shapes->getValue(tempId);
+
+   // Clean up the temporary ID now that the shape has been retrieved
+   delete tempId;
+
+   // Check to see if a shape container was found with the given ID
+   if (shapeObj != NULL)
+   {
+      // Return the PhysX shape associated by the shape container
+      return shapeObj->getShape();
+   }
+   else
+   {
+      // The shape container was not found, so return NULL
+      return NULL;
+   }
+}
+
+
+void PhysXRigidActor::setShapeDensity(unsigned int shapeId, float density)
+{
+   PhysXShape *   shapeObj;
+   atInt *        tempId;
+
+   // Convert the given ID into an atInt, so that it can be used to check
+   // the map
+   tempId = new atInt(shapeId);
+
+   // Retrieve the shape attached to this actor with the given ID
+   shapeObj = (PhysXShape *) actor_shapes->getValue(tempId);
+
+   // Modify the density of the shape with the given value
+   shapeObj->setDensity(density);
+
+   // Re-calculate the density of the actor
+   updateDensity();
+
+   // Clean up the temporary ID now that the density has been updated
+   delete tempId;
+}
+
+
+void PhysXRigidActor::detachShape(unsigned int shapeId)
+{
+   atInt *        tempId;
+   PhysXShape *   shape;
+
+   // Convert the given ID into an atInt, so that it can be used to search
+   // the shape map
+   tempId = new atInt(shapeId);
+
+   // Attempt to remove a shape from the shape map with the given ID
+   shape = (PhysXShape *) actor_shapes->removeEntry(tempId);
+
+   // Check to see if a shape was removed
+   if (shape != NULL)
+   {
+      // Detach the PhysX shape from the actor
+      rigid_actor->detachShape(*shape->getShape());
+
+      // Clean up the shape container
+      delete shape;
+   }
+
+   // Clean up the temporary ID now that the operations are complete
+   delete tempId;
+}
+
+
+void PhysXRigidActor::detachAllShapes()
+{
+   atList *       shapeIds;
+   atList *       shapes;
+   PhysXShape *   currShape;
+
+   // Retrieve all the shapes that are attached to this actor
+   shapeIds = new atList();
+   shapes = new atList();
+   actor_shapes->getSortedList(shapeIds, shapes);
+
+   // Go through each of the shapes
+   currShape = (PhysXShape *) shapes->getFirstEntry();
+   while (currShape != NULL)
+   {
+      // Detach the PhysX shape from the actor
+      rigid_actor->detachShape(*currShape->getShape());
+
+      // Move onto the next shape
+      currShape = (PhysXShape *) shapes->getNextEntry();
+   }
+
+   // Remove all the shapes from the map and delete the lists, which should
+   // clean up the shapes as well
+   actor_shapes->clear();
+   delete shapeIds;
+   delete shapes;
 }
 
 
@@ -183,33 +329,6 @@ atString * PhysXRigidActor::getName()
 {
    // Return the current name of this actor
    return actor_name;
-}
-
-
-bool PhysXRigidActor::setDensity(float density)
-{
-   if (actor_type == DYNAMIC)
-   {
-       return PxRigidBodyExt::updateMassAndInertia(
-                 *((PxRigidDynamic *) rigid_actor), density);
-   }
-
-   // Not allowed to set density on non-dynamic actors
-   return false;
-}
-
-
-bool PhysXRigidActor::setMass(float mass)
-{
-   // Only dynamic actors can have a mass
-   if (actor_type == DYNAMIC)
-   {
-       return PxRigidBodyExt::setMassAndUpdateInertia(
-                 *((PxRigidDynamic *) rigid_actor), mass);
-   }
-
-   // Not allowed to set density on non-dynamic actors
-   return false;
 }
 
 
@@ -375,5 +494,82 @@ bool PhysXRigidActor::isDynamic()
       return true;
    else
       return false;
+}
+
+
+bool PhysXRigidActor::setMass(float mass)
+{
+   // Only dynamic actors can have mass
+   if (actor_type == DYNAMIC)
+      return PxRigidBodyExt::setMassAndUpdateInertia(
+                *((PxRigidDynamic *) rigid_actor), mass);
+
+   // Not allowed to set mass on non-dynamic actors
+   return false;
+}
+
+
+void PhysXRigidActor::updateDensity()
+{
+   PxReal *        densities;
+   atList *        shapeList;
+   PhysXShape *    currShape;
+   int             shapeIndex;
+   PxRigidBody *   rigidBody;
+
+   // Check to see if this actor is static; if it is, densities don't
+   // need to be updated as they don't matter
+   if (actor_type == STATIC)
+   {
+      // Exit out, as the density doesn't matter
+      return;
+   }
+
+   // Retrieve the shapes attached to this actor
+   shapeList = new atList();
+   actor_shapes->getSortedList(NULL, shapeList);
+
+   // Check to see if the shape list is invalid
+   if (shapeList == NULL)
+   {
+      // Exit out, since there are no shapes with which to calculate density
+      return;
+   }
+
+   // Allocate an array that will hold the densities from the shapes; this array
+   // will be passed into PhysX
+   densities = new PxReal[shapeList->getNumEntries()];
+
+   // Go through each of the shapes and store its density
+   shapeIndex = 0;
+   currShape = (PhysXShape *) shapeList->getFirstEntry();
+   while (currShape != NULL)
+   {
+      // Check to see if the current shape's density is valid
+      if (currShape->getDensity() <= 0.0f)
+      {
+         // Display a warning and use the default density, as an invalid
+         // density will cause PhysX to crash
+         densities[shapeIndex] = default_density;
+      }
+      else
+      {
+         // Record the density of the current shape
+         densities[shapeIndex] = currShape->getDensity();
+      }
+
+      // Move onto the next shape
+      currShape = (PhysXShape *) shapeList->getNextEntry();
+      shapeIndex++;
+   }
+
+   // Update the PhysX actor's density
+   rigidBody = (PxRigidBody *)rigid_actor;
+   PxRigidBodyExt::updateMassAndInertia(*rigidBody, densities,
+      shapeList->getNumEntries());
+
+   // Clean up the temporary shape list
+   shapeList->removeAllEntries();
+   delete shapeList;
 }
 

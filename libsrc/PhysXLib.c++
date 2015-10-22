@@ -33,6 +33,9 @@
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
 
+// SDS
+//#include <crtdbg.h>
+
 
 #ifdef _WIN32
 #define PHYSX_API extern "C" __declspec(dllexport)
@@ -93,11 +96,12 @@ static CollisionProperties * collisions_array;
 //-----------------------------------------------------------------------------
 
 
-PhysXRigidActor * createActor(unsigned int id,
+PhysXRigidActor * createRigidActor(unsigned int id,
    char * name, float x, float y, float z, bool isDynamic)
 {
    PhysXRigidActor *   actor;
    ActorType           actorType;
+   atInt *             actorKey;
 
    // Determine whether the actor to be created is dynamic or static
    if (isDynamic)
@@ -114,16 +118,18 @@ PhysXRigidActor * createActor(unsigned int id,
    actor->setName(name);
 
    // Keep track of the actor in the map and then return it
-   actor_map->addEntry(actor->getID(), actor);
+   actorKey = new atInt(id);
+   actor_map->addEntry(actorKey, actor);
    return actor;
 }
 
 
-PhysXRigidActor * createActor(unsigned int id,
+PhysXRigidActor * createRigidActor(unsigned int id,
    char * name, float x, float y, float z, PxQuat Rot, bool isDynamic)
 {
    PhysXRigidActor *   actor;
    ActorType           actorType;
+   atInt *             actorKey;
 
    // Determine whether the actor to be created is dynamic or static
    if (isDynamic)
@@ -140,7 +146,8 @@ PhysXRigidActor * createActor(unsigned int id,
    actor->setName(name);
 
    // Keep track of the actor in the map and then return it
-   actor_map->addEntry(actor->getID(), actor);
+   actorKey = new atInt(id);
+   actor_map->addEntry(actorKey, actor);
    return actor;
 }
 
@@ -213,7 +220,7 @@ void startVisualDebugger()
    }
 
    // Create the ip address, port, and timeout for the connection
-   const char * pvd_host_ip = "127.0.0.1";
+   const char * pvd_host_ip = "10.171.195.111";
    int port = 5425;
    unsigned int timeout = 100;
 
@@ -516,10 +523,510 @@ PHYSX_API void releaseScene()
 }
 
 
-PHYSX_API void createActorSphere(
-   unsigned int id, char * name, float x, float y, float z,
+PHYSX_API void createActor(
+   unsigned int id, char * name, float x, float y, float z, bool isDynamic)
+{
+   PhysXRigidActor *   actor;
+   atInt *             checkID;
+
+   // Create a new atint that will be used to search the map for a duplicate
+   // actor
+   checkID = new atInt(id);
+
+   // Check that the scene has been initialized an that the actor doesn't
+   // exist
+   if (scene_initialized == true && !actor_map->containsKey(checkID))
+   {
+      // Lock writing to the scene, in order to make the following operations
+      // thead-safe
+      px_scene->lockWrite();
+
+      // Create the rigid actor
+      actor = createRigidActor(id, name, x, y, z, isDynamic);
+
+      // Add the newly created actor to the scene
+      px_scene->addActor(*(actor->getActor()));
+
+      // Now that the actor has been added, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else if (scene_initialized)
+   {
+      // Notify that an actor with the given ID already exists
+      logger->notify(AT_WARN, "Failed to create actor! Actor already "
+         "exists.\n");
+   }
+   else
+   {
+      // Notify that the scene has not been initialized
+      logger->notify(AT_WARN, "Failed to create actor! Scene not "
+         "initialized.\n");
+   }
+}
+
+
+PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
    float staticFriction, float dynamicFriction, float restitution,
-   float radius, float density, bool isDynamic)
+   float radius, float x, float y, float z, float density)
+{
+   PhysXRigidActor *   actor;
+   PxMaterial *        material;
+   PxSphereGeometry    geometry;
+   PxShape *           shape;
+   atInt *             actorID;
+   PxTransform         localPose;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to attach sphere! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID
+   if (actor != NULL)
+   {
+      // Create a new material that will describe the various physical
+      // properties of the sphere
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Create the geometry and shape based on the given data
+      geometry = PxSphereGeometry(radius);
+      shape = px_physics->createShape(geometry, *material, true);
+
+      // Set the position and orientation of the sphere relative to the actor
+      // using the given parameters
+      localPose.p = PxVec3(x, y, z);
+      localPose.q = PxQuat(PxIdentity);
+      shape->setLocalPose(localPose);
+
+      // Ensure that the following changes to the scene are thread-safe
+      px_scene->lockWrite();
+
+      // Add the newly-created shape to the given actor
+      actor->addShape(shapeId, shape, density);
+
+      // Now that the shape has been added, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to attach sphere! Actor not found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
+   float staticFriction, float dynamicFriction, float restitution, float halfX,
+   float halfY, float halfZ, float x, float y, float z, float rotX, float rotY,
+   float rotZ, float rotW, float density)
+{
+   PhysXRigidActor *   actor;
+   PxMaterial *        material;
+   PxBoxGeometry       geometry;
+   PxShape *           shape;
+   atInt *             actorID;
+   PxTransform         localPose;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to attach box! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID
+   if (actor != NULL)
+   {
+      // Create a new material that will describe the various physical
+      // properties of the box
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Create the geometry and shape based on the given data
+      geometry = PxBoxGeometry(halfX, halfY, halfZ);
+      shape = px_physics->createShape(geometry, *material, true);
+
+      // Set the position and orientation of the box relative to the actor
+      // using the given parameters
+      localPose.p = PxVec3(x, y, z);
+      localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
+      shape->setLocalPose(localPose);
+
+      // Ensure that the following changes to the scene are thread-safe
+      px_scene->lockWrite();
+
+      // Add the newly-created shape to the given actor
+      actor->addShape(shapeId, shape, density);
+
+      // Now that the shape has been added, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to attach box! Actor not found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
+   float staticFriction, float dynamicFriction, float restitution,
+   float halfHeight, float radius, float x, float y, float z, float rotX,
+   float rotY, float rotZ, float rotW, float density)
+{
+   PhysXRigidActor *   actor;
+   PxMaterial *        material;
+   PxCapsuleGeometry   geometry;
+   PxShape *           shape;
+   PxTransform         localPose;
+   atInt *             actorID;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to attach capsule! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID
+   if (actor != NULL)
+   {
+      // Create a new material that will describe the various physical
+      // properties of the capsule
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Create the geometry and shape based on the given data
+      geometry = PxCapsuleGeometry(halfHeight, radius);
+      shape = px_physics->createShape(geometry, *material, true);
+
+      // Set the position and orientation of the capsule relative to the actor
+      // using the given parameters
+      localPose.p = PxVec3(x, y, z);
+      localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
+      shape->setLocalPose(localPose);
+
+      // Ensure that the following changes to the scene are thread-safe
+      px_scene->lockWrite();
+
+      // Add the newly-created shape to the given actor
+      actor->addShape(shapeId, shape, density);
+
+      // Now that the shape has been added, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to attach capsule! Actor not found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
+   float staticFriction, float dynamicFriction, float restitution,
+   float * vertices, float * indices, int vertexCount, int indexCount, float x,
+   float y, float z, float rotX, float rotY, float rotZ, float rotW)
+{
+   PhysXRigidActor *        actor;
+   PxMaterial *             material;
+   PxTriangleMeshGeometry   geometry;
+   PxShape *                shape;
+   PxVec3 *                 vertexArray;
+   PxU32 *                  indexArray;
+   PxTriangleMesh *         triangleMesh;
+   PxTriangleMeshDesc       meshDesc;
+   PxMeshScale              meshScale;
+   atInt *                  actorID;
+   PxTransform              localPose;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to attach triangle mesh! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID and that it is
+   // static
+   if (actor != NULL && !actor->isDynamic())
+   {
+      // Create a new material that will describe the various physical
+      // properties of the capsule
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Convert the given array of vertex points to an array of PhysX vectors,
+      // for use by PhysX
+      vertexArray = new PxVec3[vertexCount];
+      for (int i = 0; i < vertexCount; i++)
+      {
+         vertexArray[i] =
+            PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+      }
+
+      // Convert the given array of indices into an array of PhysX unsigned
+      // integers
+      indexArray = new PxU32[indexCount];
+      for (int i = 0; i < indexCount; i++)
+      {
+         indexArray[i] = (PxU32) indices[i];
+      }
+
+      // Constuct a description of the actor mesh
+      meshDesc.points.count = vertexCount;
+      meshDesc.points.stride = sizeof(PxVec3);
+      meshDesc.points.data = vertexArray;
+      meshDesc.triangles.count = indexCount / 3;
+      meshDesc.triangles.stride = sizeof(PxU32) * 3;
+      meshDesc.triangles.data = indexArray;
+
+      // Create the triangle mesh using the cooking library
+      triangleMesh = px_cooking->createTriangleMesh(
+         meshDesc, px_physics->getPhysicsInsertionCallback());
+
+      // Create the geometry for the mesh
+      meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
+      meshScale.rotation = PxQuat::createIdentity();
+      geometry = PxTriangleMeshGeometry(
+         triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
+
+      // Create the shape based on the given geometry and material
+      shape = px_physics->createShape(geometry, *material, true);
+
+      // Set the position and orientation of the mesh relative to the actor
+      // using the given parameters
+      localPose.p = PxVec3(x, y, z);
+      localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
+      shape->setLocalPose(localPose);
+
+      // Ensure that the following changes to the scene are thread-safe
+      px_scene->lockWrite();
+
+      // Add the newly-created shape to the given actor (use a 0 density
+      // as this density will not be used due to the actor being static)
+      actor->addShape(shapeId, shape, 0.0f);
+
+      // Now that the shape has been added, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else if (actor != NULL)
+   {
+      // Indicate to the user that triangle meshes can only be attached to
+      // static actors
+      logger->notify(AT_WARN, "Failed to attach triangle mesh! Actor is "
+         "dynamic.\n");
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to attach triangle mesh! Actor not "
+         "found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
+   float staticFriction, float dynamicFriction, float restitution,
+   float * vertices, int vertexCount, float x, float y, float z, float rotX,
+   float rotY, float rotZ, float rotW, float density)
+{
+   PhysXRigidActor *             actor;
+   PxMaterial *                  material;
+   PxConvexMeshGeometry          geometry;
+   PxShape *                     shape;
+   PxVec3 *                      vertexArray;
+   PxConvexMesh *                convexMesh;
+   PxConvexMeshGeometry          meshGeom;
+   PxConvexMeshDesc              meshDesc;
+   PxMeshScale                   meshScale;
+   PxDefaultMemoryOutputStream   buffer;
+   PxDefaultMemoryInputData*     inputData;
+   atInt *                       actorID;
+   PxTransform                   localPose;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to attach convex mesh! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID
+   if (actor != NULL)
+   {
+      // Create a new material that will describe the various physical
+      // properties of the capsule
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Convert the given array of vertex points to an array of PhysX
+      // vectors, for use by PhysX
+      vertexArray = new PxVec3[vertexCount];
+      for (int i = 0; i < vertexCount; i++)
+      {
+         vertexArray[i] =
+            PxVec3(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+      }
+
+      // Construct a description of the convex mesh
+      meshDesc.points.count = vertexCount;
+      meshDesc.points.stride = sizeof(PxVec3);
+      meshDesc.points.data = vertexArray;
+      meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+      meshDesc.vertexLimit = 256;
+
+      logger->notify(AT_INFO, "Convex mesh vertex array count: %d\n",
+         vertexCount);
+      // Attempt to 'cook' the mesh data into a form which allows PhysX to
+      // perform efficient collision detection; results are written to
+      // the stream buffer
+      if (px_cooking->cookConvexMesh(meshDesc, buffer))
+      {
+         // Sucessfully cooked the convex mesh so create the input stream
+         // from the resulting data and use it to create the convex mesh
+         inputData =
+            new PxDefaultMemoryInputData(buffer.getData(), buffer.getSize());
+         convexMesh = px_physics->createConvexMesh(*inputData);
+
+         // Create the geometry for the mesh
+         meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
+         meshScale.rotation = PxQuat::createIdentity();
+         meshGeom = PxConvexMeshGeometry(convexMesh, meshScale);
+
+         // Create a new shape for the mesh
+         shape = px_physics->createShape(meshGeom, *material, true);
+
+         // Set the position and orientation of the mesh relative to the actor
+         // using the given parameters
+         localPose.p = PxVec3(x, y, z);
+         localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
+         shape->setLocalPose(localPose);
+
+         // Ensure that the following changes to the scene are thread-safe
+         px_scene->lockWrite();
+
+         // Add the newly-created shape to the given actor
+         actor->addShape(shapeId, shape, density);
+
+         // Now that the shape has been added, unlock writing on other threads
+         px_scene->unlockWrite();
+      }
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to attach convex mesh! Actor not "
+         "found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
+{
+   PhysXRigidActor *   actor;
+   atInt *             actorID;
+
+   // Check to see if the scene has not been initialized
+   if (!scene_initialized)
+   {
+      // The scene hasn't been initialized, so display a warning and exit out
+      logger->notify(AT_WARN, "Failed to detach shape! Scene not "
+         "initialized.\n");
+      return;
+   }
+
+   // Create a new atInt that will be used to find the actor with the given ID
+   actorID = new atInt(id);
+
+   // Attempt to fetch the actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
+
+   // Check to see if an actor was found with the given ID
+   if (actor)
+   {
+      // Ensure that the following changes to the scene are thread-safe
+      px_scene->lockWrite();
+
+      // Detach the shape with the give shape ID attached to the given actor
+      actor->detachShape(shapeId);
+
+      // Now that the shape has been removed, unlock writing on other threads
+      px_scene->unlockWrite();
+   }
+   else
+   {
+      // Indicate to the user that the given actor was not found
+      logger->notify(AT_WARN, "Failed to remove shape! Actor not found.\n");
+   }
+
+   // Clean up the temporary atInt created to look up the actor
+   delete actorID;
+}
+
+
+PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
+   float y, float z, unsigned int shapeId, float staticFriction,
+   float dynamicFriction, float restitution, float radius, float density,
+   bool isDynamic)
 {
    PhysXRigidActor *    actor;
    PxMaterial *         material;
@@ -538,7 +1045,7 @@ PHYSX_API void createActorSphere(
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -547,10 +1054,10 @@ PHYSX_API void createActorSphere(
       // Create a sphere geometry and use it and the material
       // to create a new shape
       geometry = PxSphereGeometry(radius);
-      shape = px_physics->createShape(geometry, *material);
+      shape = px_physics->createShape(geometry, *material, true);
 
       // Assign the new shape to the actor
-      actor->setShape(shape);
+      actor->addShape(shapeId, shape, density);
 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
@@ -569,10 +1076,10 @@ PHYSX_API void createActorSphere(
 }
 
 
-PHYSX_API void createActorBox(
-   unsigned int id, char * name, float posX, float posY, float posZ,
-   float staticFriction, float dynamicFriction, float restitution,
-   float halfX, float halfY, float halfZ, float density, bool isDynamic)
+PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
+   float posY, float posZ, unsigned int shapeId, float staticFriction,
+   float dynamicFriction, float restitution, float halfX, float halfY,
+   float halfZ, float density, bool isDynamic)
 {
    PhysXRigidActor *   actor;
    PxMaterial *        material;
@@ -591,7 +1098,7 @@ PHYSX_API void createActorBox(
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createActor(id, name, posX, posY, posZ, isDynamic);
+      actor = createRigidActor(id, name, posX, posY, posZ, isDynamic);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -600,10 +1107,10 @@ PHYSX_API void createActorBox(
       // Create a box geometry and use it and the material
       // to create a new shape
       geometry = PxBoxGeometry(halfX, halfY, halfZ);
-      shape = px_physics->createShape(geometry, *material);
+      shape = px_physics->createShape(geometry, *material, true);
 
       // Assign the new shape to the actor
-      actor->setShape(shape);
+      actor->addShape(shapeId, shape, density);
 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
@@ -622,11 +1129,11 @@ PHYSX_API void createActorBox(
 }
 
 
-PHYSX_API void createActorCapsule(
-   unsigned int id, char * name, float x, float y, float z, float rotX,
-   float rotY, float rotZ, float rotW, float staticFriction,
-   float dynamicFriction, float restitution, float halfHeight, float radius,
-   float density, bool isDynamic)
+PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
+   float y, float z, float rotX, float rotY, float rotZ, float rotW,
+   unsigned int shapeId, float staticFriction, float dynamicFriction,
+   float restitution, float halfHeight, float radius, float density,
+   bool isDynamic)
 {
    PhysXRigidActor *     actor;
    PxMaterial *          material;
@@ -646,7 +1153,7 @@ PHYSX_API void createActorCapsule(
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -655,7 +1162,7 @@ PHYSX_API void createActorCapsule(
       // Create a capsule geometry and use it and the material
       // to create a new shape
       geometry = PxCapsuleGeometry(halfHeight, radius);
-      shape = px_physics->createShape(geometry, *material);
+      shape = px_physics->createShape(geometry, *material, true);
 
       // TODO: Relative transform should be given
       // Create a relative transform for the capsule geometry to stand
@@ -664,7 +1171,7 @@ PHYSX_API void createActorCapsule(
       shape->setLocalPose(relativePose);
 
       // Assign the new shape to the actor
-      actor->setShape(shape);
+      actor->addShape(shapeId, shape, density);
 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
@@ -680,11 +1187,10 @@ PHYSX_API void createActorCapsule(
 }
 
 
-PHYSX_API void createActorTriangleMesh(
-   unsigned int id, char * name, float x, float y, float z,
-   float staticFriction, float dynamicFriction, float restitution,
-   float* vertices, int* indices, int vertexCount, int indexCount,
-   bool isDynamic)
+PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
+   float y, float z, unsigned int shapeId, float staticFriction,
+   float dynamicFriction, float restitution, float* vertices, int* indices,
+   int vertexCount, int indexCount, bool isDynamic)
 {
    PhysXRigidActor *        actor;
    PxMaterial *             material;
@@ -695,7 +1201,7 @@ PHYSX_API void createActorTriangleMesh(
    PxTriangleMeshGeometry   meshGeom;
    PxTriangleMeshDesc       meshDesc;
    PxMeshScale              meshScale;
-   atInt *               checkID;
+   atInt *                  checkID;
 
    // Create a new atInt that will be used to search the map for a duplicate
    // actor
@@ -709,7 +1215,7 @@ PHYSX_API void createActorTriangleMesh(
       px_scene->lockWrite();
 
       // Create the rigid actor for this mesh and add it to the scene
-      actor = createActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(staticFriction, dynamicFriction, 
@@ -750,9 +1256,10 @@ PHYSX_API void createActorTriangleMesh(
       meshGeom = PxTriangleMeshGeometry(
          triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
 
-      // Create a new shape for the mesh and add it to the actor
-      meshShape = px_physics->createShape(meshGeom, *material);
-      actor->setShape(meshShape);
+      // Create a new shape for the mesh and add it to the actor (use a 0,
+      // as it won't matter for the static actor)
+      meshShape = px_physics->createShape(meshGeom, *material, true);
+      actor->addShape(shapeId, meshShape, 0.0f);
 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
@@ -769,22 +1276,22 @@ PHYSX_API void createActorTriangleMesh(
 }
 
 
-PHYSX_API void createActorConvexMesh(
-   unsigned int id, char * name, float x, float y, float z,
-   float staticFriction, float dynamicFriction, float restitution,
-   float* vertices, int vertexCount, bool isDynamic)
+PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
+   float y, float z, unsigned int shapeId, float staticFriction,
+   float dynamicFriction, float restitution, float* vertices, int vertexCount,
+   float density, bool isDynamic)
 {
-   PhysXRigidActor *      actor;
-   PxMaterial *           material;
-   PxShape *              meshShape;
-   PxVec3 *               vertexArray;
-   PxConvexMesh *         convexMesh;
-   PxConvexMeshGeometry   meshGeom;
-   PxConvexMeshDesc       meshDesc;
-   PxMeshScale            meshScale;
+   PhysXRigidActor *             actor;
+   PxMaterial *                  material;
+   PxShape *                     meshShape;
+   PxVec3 *                      vertexArray;
+   PxConvexMesh *                convexMesh;
+   PxConvexMeshGeometry          meshGeom;
+   PxConvexMeshDesc              meshDesc;
+   PxMeshScale                   meshScale;
    PxDefaultMemoryOutputStream   buffer;
-   PxDefaultMemoryInputData*      inputData;
-   atInt *               checkID;
+   PxDefaultMemoryInputData*     inputData;
+   atInt *                       checkID;
 
    // Create a new atInt that will be used to search the map for a duplicate
    // actor
@@ -798,11 +1305,12 @@ PHYSX_API void createActorConvexMesh(
       px_scene->lockWrite();
 
       // Create the rigid actor for this mesh and add it to the scene
-      actor = createActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
       material =
-         px_physics->createMaterial(staticFriction, dynamicFriction, restitution);
+         px_physics->createMaterial(staticFriction, dynamicFriction,
+            restitution);
 
       // Convert the given array of vertex points to an array of PhysX
       // vectors, for use by PhysX
@@ -837,8 +1345,8 @@ PHYSX_API void createActorConvexMesh(
          meshGeom = PxConvexMeshGeometry(convexMesh, meshScale);
 
          // Create a new shape for the mesh and add it to the associated actor
-         meshShape = px_physics->createShape(meshGeom, *material);
-         actor->setShape(meshShape);
+         meshShape = px_physics->createShape(meshGeom, *material, true);
+         actor->addShape(shapeId, meshShape, density);
 
          // Add the newly created actor to the scene
          px_scene->addActor(*(actor->getActor()));
@@ -876,6 +1384,7 @@ PHYSX_API void removeActor(unsigned int id)
       return;
    }
 
+   logger->notify(AT_INFO, "Removing actor %u\n", id);
    px_scene->lockWrite();
 
    // Remove the desired actor from the scene and specify that all
@@ -890,40 +1399,53 @@ PHYSX_API void removeActor(unsigned int id)
 }
 
 
-PHYSX_API bool updateActorDensity(unsigned int id, float density)
+PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
+   float staticFriction, float dynamicFriction, float restitution)
 {
-   PhysXRigidActor * rigidActor;
+   PhysXRigidActor *   actor;
+   PxShape *           shape;
+   PxMaterial *        material;
+   atInt *             actorID;
 
-   // Fetch the actor by the given id
-   rigidActor = getActor(id);
-
-   // Update the density for the actor if it is dynamic
-   if (rigidActor != NULL && rigidActor->isDynamic())
+   // Check to see if the scene has been initialized
+   if (!scene_initialized)
    {
-      return rigidActor->setDensity(density);
+      // Notify the user that the update failed, because the scene has not been
+      // initialized, and exit
+      logger->notify(AT_WARN, "Failed to update material. Scene not "
+         "initialized.\n");
    }
 
-   // If the actor is not dynamic, or is not found, return false
-   return false;
-}
+   // Create a temporary atInt for the ID that will be used to search the
+   // actor map
+   actorID = new atInt(id);
 
+   // Attempt to find an actor with the given ID
+   actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
-PHYSX_API bool updateActorMass(unsigned int id, float mass)
-{
-   PhysXRigidActor * rigidActor;
-
-   // Fetch the actor by the given id
-   rigidActor = getActor(id);
-
-   // Update the mass for the actor if it is dynamic
-   if (rigidActor != NULL && rigidActor->isDynamic())
+   // Check to see if an actor was found
+   if (actor)
    {
-      return rigidActor->setMass(mass);
+      // Retrieve the shape with the given ID attached to the actor
+      shape = actor->getShape(shapeId);
+
+      // Create a new material given the new parameters
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
+         restitution);
+
+      // Assign the new material to the actor's shape
+      shape->setMaterials(&material, 1);
+   }
+   else
+   {
+      // Notify the user that an actor with given ID was not found
+      logger->notify(AT_WARN, "Failed to update material. Actor not found.\n");
    }
 
-   // If the actor is not dynamic, or is not found, return false
-   return false;
+   // Clean up the temporary atInt used for looking up the actor
+   delete actorID;
 }
+
 
 
 PHYSX_API float getActorMass(unsigned int id)
@@ -1146,6 +1668,48 @@ PHYSX_API void enableGravity(unsigned int id, bool enabled)
 }
 
 
+PHYSX_API void updateShapeDensity(unsigned int id, unsigned int shapeID,
+   float density)
+{
+   PhysXRigidActor *   rigidActor;
+
+   // Fetch the actor based on the given ID
+   rigidActor = getActor(id);
+
+   // Check to see if the desired actor was found
+   if (rigidActor != NULL)
+   {
+      // Ensure the following operation is thread-safe
+      px_scene->lockWrite();
+
+      // Update the density of the given shape
+      rigidActor->setShapeDensity(shapeID, density);
+
+      // Now that the operation is complete, unlocking writing to the scene
+      // from other threads
+      px_scene->unlockWrite();
+   }
+}
+
+
+PHYSX_API bool updateActorMass(unsigned int id, float mass)
+{
+   PhysXRigidActor * rigidActor;
+
+   // Fetch the actor by the given id
+   rigidActor = getActor(id);
+
+   // Update the mass for the actor if it is dynamic
+   if (rigidActor != NULL && rigidActor->isDynamic())
+   {
+      return rigidActor->setMass(mass);
+   }
+
+   // If the actor is not dynamic, or is not found, return false
+   return false;
+}
+
+
 PHYSX_API void createGroundPlane(float x, float y, float z)
 {
    PxTransform    planePos;
@@ -1184,19 +1748,20 @@ PHYSX_API void releaseGroundPlane()
 }
 
 
-PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
-   int regionSizeY, float rowSpacing, float columnSpacing, float * posts)
+PHYSX_API void setHeightField(unsigned terrainActorID,
+   unsigned int terrainShapeID, int regionSizeX, int regionSizeY,
+   float rowSpacing, float columnSpacing, float * posts)
 {
-   PxHeightFieldDesc heightFieldDescription;
-   uint64_t numPosts;
-   PxHeightFieldSample * heightFieldSampleArray;
-   PxStridedData stridedData;
-   PxHeightField * heightField;
-   PxHeightFieldGeometry * heightFieldGeometry;
-   PxMaterial * physxMaterial;
-   PxShape * newShape;
-   PhysXRigidActor * actor;
-   atInt *  terrainID;
+   PxHeightFieldDesc         heightFieldDescription;
+   uint64_t                  numPosts;
+   PxHeightFieldSample *     heightFieldSampleArray;
+   PxStridedData             stridedData;
+   PxHeightField *           heightField;
+   PxHeightFieldGeometry *   heightFieldGeometry;
+   PxMaterial *              physxMaterial;
+   PxShape *                 newShape;
+   PhysXRigidActor *         actor;
+   atInt *                   terrainID;
 
    // TODO: Check that the terrain is added to the correct scene
 
@@ -1280,11 +1845,12 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    physxMaterial = px_physics->createMaterial(0.2f, 0.2f, 0.0f);
 
    // Use the geometry and material to create the terrain shape
-   newShape = px_physics->createShape(*heightFieldGeometry, *physxMaterial);
+   newShape = px_physics->createShape(*heightFieldGeometry, *physxMaterial,
+      true);
 
    // Check if the scene already has a loaded terrain so that it can be removed
    // before the next terrain is loaded
-   terrainID = new atInt(terrainShapeID);
+   terrainID = new atInt(terrainActorID);
    if (actor_map->containsKey(terrainID))
    {
       // Remove the actor from the map of actors, but keep a reference so the
@@ -1300,8 +1866,7 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
    }
 
    // Create a static actor to hold the terrain height map shape
-   // TODO: Update ID
-   actor = createActor(terrainID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
+   actor = createRigidActor(terrainID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
       false);
 
    // Rotate the height map to the correct world position, this is needed
@@ -1312,8 +1877,8 @@ PHYSX_API void setHeightField(int terrainShapeID, int regionSizeX,
       PxQuat(0.5f, 0.5f, 0.5f, 0.5f)));
 
    // Add the shape for the terrain to the actor that has been added to the
-   // scene
-   actor->setShape(newShape);
+   // scene (use a 0 density, as it will not matter for the static height field)
+   actor->addShape(terrainShapeID, newShape, 0.0f);
 
    // Add the newly created actor to the scene
    px_scene->addActor(*(actor->getActor()));
@@ -1340,6 +1905,9 @@ PHYSX_API void addJoint(
    float                       ySwingLimit;
    float                       zSwingLimit;
 
+   // SDS
+   //int iPrev = _CrtSetReportMode(_CRT_ASSERT, 0);
+
    // Check whether or not a joint with the given ID already exists;
    // can't have the same IDs for different joints
    physXJoint = (PhysXJoint *)joint_map->getValue(new atInt(jointID));
@@ -1354,14 +1922,20 @@ PHYSX_API void addJoint(
    // the PhysX rigid actor; otherwise rigid actor is NULL which would
    // indicate that the joint is attached to a point in the world frame
    if (actor1 != NULL)
+   {
       rigidActor1 = actor1->getRigidActor();
+      logger->notify(AT_INFO, "Joint actor1: %d\n", actor1->isDynamic());
+   }
    else
       rigidActor1 = NULL;
 
    // Same here: check if given actor exists and get reference to rigid actor
    // or set to NULL to indicate this is a point in the world frame
    if (actor2 != NULL)
+   {
       rigidActor2 = actor2->getRigidActor();
+      logger->notify(AT_INFO, "Joint actor2: %d\n", actor2->isDynamic());
+   }
    else
       rigidActor2 = NULL;
 
@@ -1376,9 +1950,15 @@ PHYSX_API void addJoint(
    joint = PxD6JointCreate(
       *px_physics, rigidActor1, actor1Frame, rigidActor2, actor2Frame);
 
+   if (rigidActor1 != NULL && actor1->isDynamic())
+      ((PxRigidDynamic *)rigidActor1)->wakeUp();
+
+   if (rigidActor2 != NULL && actor2->isDynamic())
+      ((PxRigidDynamic *)rigidActor2)->wakeUp();
+
    // Indicate that this joint should be enforced, even under extreme duress
-   joint->setProjectionLinearTolerance(0.1f);
-   joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+   //joint->setProjectionLinearTolerance(0.1f);
+   //joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
 
    // Adjust linear constraints of the joint based on the given limits
    // for each of the translational axes
@@ -1473,9 +2053,19 @@ PHYSX_API void addJoint(
 
    // Create a new container to hold the joint information
    physXJoint = new PhysXJoint(joint, jointID, actorID1, actorID2);
+   PxRigidBody * temp;
+   temp = (PxRigidBody *)rigidActor1;
+   if (temp)
+      temp->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+   temp = (PxRigidBody *)rigidActor2;
+   if (temp)
+      temp->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
 
    // Save reference to the new joint
    joint_map->addEntry(new atInt(jointID), physXJoint);
+
+   // SDS
+   //_CrtSetReportMode(_CRT_ASSERT, iPrev);
 }
 
 
@@ -1506,6 +2096,9 @@ PHYSX_API void simulate(float time,
    PxVec3                      angularVelocity;
 
    px_scene->lockRead();
+
+   // SDS
+   //int iPrev = _CrtSetReportMode(_CRT_ASSERT, 0);
 
    // Advance the world forward in time
    px_scene->simulate(time);
@@ -1578,6 +2171,10 @@ PHYSX_API void simulate(float time,
    // in this step, by reference
    *updatedEntityCount = numTransforms;
    px_collisions->getCollisions(updatedCollisionCount);
+
+   // SDS
+   //_CrtSetReportMode(_CRT_ASSERT, iPrev);
+
    px_scene->unlockRead();
 }
 
