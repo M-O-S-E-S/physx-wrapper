@@ -140,7 +140,7 @@ if buildTarget == 'win32.32bit':
 elif buildTarget == 'win32.64bit':
    # Flags for the VC++ compiler
    # /nologo      = Don't print the compiler banner
-   # /MD          = Use multithreaded DLL runtime
+   # /MT          = Use multithreaded static runtime
    # /O2          = Optimize for speed
    # /EHsc        = Exception handling
    # /W3          = Warning level
