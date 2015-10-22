@@ -85,7 +85,6 @@ static EntityProperties *   update_array;
 /// Array of collisions that is shared.
 static CollisionProperties *   collisions_array;
 
-
 /// A struct shared in order to pass data consistently through the update array.
 struct EntityProperties;
 
@@ -103,7 +102,7 @@ struct EntityProperties;
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor * createRigidActor(unsigned int id, char * name, float x,
+PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
    float y, float z, bool isDynamic);
 
 /// Method to create an actor either dynamic or static with given id, name, and
@@ -121,7 +120,7 @@ PhysXRigidActor * createRigidActor(unsigned int id, char * name, float x,
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor * createRigidActor(unsigned int id, char * name, float x,
+PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
    float y, float z, PxQuat Rot, bool isDynamic);
 
 /// Method to fetch the actor from the map of actors.
@@ -253,7 +252,7 @@ extern "C"
    /// @param isDynamic Flag that will control whether the physical actor is a
    /// RigidStatic or RigidDynamic.
    ///
-   void createActor(unsigned int id, char * name, float x, float y, float z,
+   void   createActor(unsigned int id, char * name, float x, float y, float z,
       bool isDynamic);
 
    /// Method to attach a sphere shape to an existing actor.
@@ -276,9 +275,10 @@ extern "C"
    /// position of the actor to which the sphere is being attached.
    /// @param density The density of the sphere.
    ///
-   void attachSphere(unsigned int id, unsigned int shapeId,
-      float staticFriction, float dynamicFriction, float restitution,
-      float radius, float x, float y, float z, float density);
+   void   attachSphere(unsigned int id, unsigned int shapeId,
+                       float staticFriction, float dynamicFriction,
+                       float restitution, float radius, float x, float y,
+                       float z, float density);
 
    /// Method to attach a box shape to an existing actor.
    ///
@@ -310,10 +310,11 @@ extern "C"
    /// box relative to the actor.
    /// @param density The density of the box.
    ///
-   void attachBox(unsigned int id, unsigned int shapeId, float staticFriction,
-      float dynamicFriction, float restitution, float halfX, float halfY,
-      float halfZ, float x, float y, float z, float rotX, float rotY,
-      float rotZ, float rotW, float density);
+   void   attachBox(unsigned int id, unsigned int shapeId, float staticFriction,
+                    float dynamicFriction, float restitution, float halfX,
+                    float halfY, float halfZ, float x, float y, float z,
+                    float rotX, float rotY, float rotZ, float rotW,
+                    float density);
 
    /// Method to attach a capsule shape to an existing actor.
    ///
@@ -344,10 +345,11 @@ extern "C"
    /// of the capsule relative to the actor.
    /// @param density The density of the capsule.
    ///
-   void attachCapsule(unsigned int id, unsigned int shapeId,
-      float staticFriction, float dynamicFriction, float restitution,
-      float halfHeight, float radius, float x, float y, float z, float rotX,
-      float rotY, float rotZ, float rotW, float density);
+   void   attachCapsule(unsigned int id, unsigned int shapeId,
+                        float staticFriction, float dynamicFriction,
+                        float restitution, float halfHeight, float radius,
+                        float x, float y, float z, float rotX, float rotY,
+                        float rotZ, float rotW, float density);
 
    /// Method to attach a triangle mesh shape to an existing actor.
    ///
@@ -383,11 +385,12 @@ extern "C"
    /// actors, so this method will fail if the given ID belongs to a static
    /// actor.
    ///
-   void attachTriangleMesh(unsigned int id, unsigned int shapeId,
-      float staticFriction, float dynamicFriction, float restitution,
-      float * vertices, float * indices, int vertexCount, int indexCount,
-      float x, float y, float z, float rotX, float rotY, float rotZ,
-      float rotW);
+   void   attachTriangleMesh(unsigned int id, unsigned int shapeId,
+                             float staticFriction, float dynamicFriction,
+                             float restitution, float * vertices,
+                             float * indices, int vertexCount, int indexCount,
+                             float x, float y, float z, float rotX,
+                             float rotY, float rotZ, float rotW);
 
    /// Method to attach a convex mesh to an existing actor.
    ///
@@ -418,10 +421,11 @@ extern "C"
    /// of the mesh relative to the actor.
    /// @param density The density of the convex mesh.
    ///
-   void attachConvexMesh(unsigned int id, unsigned int shapeId,
-      float staticFriction, float dynamicFriction, float restitution,
-      float * vertices, int vertexCount, float x, float y, float z, float rotX,
-      float rotY, float rotZ, float rotW, float density);
+   void   attachConvexMesh(unsigned int id, unsigned int shapeId,
+                           float staticFriction, float dynamicFriction,
+                           float restitution, float * vertices, int vertexCount,
+                           float x, float y, float z, float rotX, float rotY,
+                           float rotZ, float rotW, float density);
 
    /// Method to remove and delete a shape attached to an actor.
    ///
@@ -430,7 +434,7 @@ extern "C"
    /// @param shapeId The unique identifier of the shape to be removed &
    /// deleted.
    ///
-   void removeShape(unsigned int id, unsigned int shapeId);
+   void   removeShape(unsigned int id, unsigned int shapeId);
 
    /// Method to create a sphere actor in the physical scene.
    ///
@@ -455,10 +459,10 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorSphere(unsigned int id, char * name, float x, float y, 
-      float z, unsigned int shapeId, float staticFriction,
-      float dynamicFriction, float restitution, float radius, float density,
-      bool isDynamic);
+   void   createActorSphere(unsigned int id, char * name, float x, float y, 
+                            float z, unsigned int shapeId, float staticFriction,
+                            float dynamicFriction, float restitution,
+                            float radius, float density, bool isDynamic);
 
    /// Method to create a box actor in the physical scene.
    ///
@@ -485,10 +489,11 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorBox(unsigned int id, char * name, float x, float y, 
-      float z, unsigned int shapeId, float staticFriction,
-      float dynamicFriction, float restitution, float halfX, float halfY,
-      float halfZ, float density, bool isDynamic);
+   void   createActorBox(unsigned int id, char * name, float x, float y, 
+                         float z, unsigned int shapeId, float staticFriction,
+                         float dynamicFriction, float restitution, float halfX,
+                         float halfY, float halfZ, float density,
+                         bool isDynamic);
 
    /// Method to create a capsule actor in the physical scene.
    ///
@@ -522,11 +527,12 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorCapsule(unsigned int id, char * name, float x, float y, 
-      float z, unsigned int shapeId, float rotX, float rotY, float rotZ,
-      float rotW, float staticFriction, float dynamicFriction,
-      float restitution, float halfHeight, float radius, float density,
-      bool isDynamic);
+   void   createActorCapsule(unsigned int id, char * name, float x, float y, 
+                             float z, unsigned int shapeId, float rotX,
+                             float rotY, float rotZ, float rotW,
+                             float staticFriction, float dynamicFriction,
+                             float restitution, float halfHeight, float radius,
+                             float density, bool isDynamic);
 
    /// Method to create a triangle mesh actor in the physical scene.
    ///
@@ -554,10 +560,12 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorTriangleMesh(unsigned int id, char * name, float x, float y, 
-      float z, unsigned int shapeId, float staticFriction,
-      float dynamicFriction, float restitution, float * vertices,
-      float * indices, int vertexCount, int indexCount, bool isDynamic);
+   void   createActorTriangleMesh(unsigned int id, char * name, float x,
+                                  float y, float z, unsigned int shapeId,
+                                  float staticFriction, float dynamicFriction,
+                                  float restitution, float * vertices,
+                                  float * indices, int vertexCount,
+                                  int indexCount, bool isDynamic);
 
    /// Method to create a convex mesh actor in the physical scene.
    ///
@@ -584,10 +592,11 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void createActorConvexMesh(unsigned int id, char * name, float x, float y, 
-      float z, unsigned int shapeId, float staticFriction,
-      float dynamicFriction, float restitution, float * vertices,
-      int vertexCount, float density, bool isDynamic);
+   void   createActorConvexMesh(unsigned int id, char * name, float x, float y, 
+                                float z, unsigned int shapeId,
+                                float staticFriction, float dynamicFriction,
+                                float restitution, float * vertices,
+                                int vertexCount, float density, bool isDynamic);
 
    /// Remove an actor from the physical scene.
    ///
@@ -607,8 +616,9 @@ extern "C"
    /// for the shape when sliding against other objects in the scene.
    /// @param restitution The bounciness of this shape.
    ///
-   void updateMaterialProperties(unsigned int id, unsigned int shapeId,
-      float staticFriction, float dynamicFriction, float restitution);
+   void   updateMaterialProperties(unsigned int id, unsigned int shapeId,
+                                   float staticFriction, float dynamicFriction,
+                                   float restitution);
 
    /// Get the mass of a physical actor.
    ///
@@ -721,8 +731,8 @@ extern "C"
    /// @param shapeID The unique identifier of the desired shape.
    /// @param density The new density of the shape.
    ///
-   void updateShapeDensity(unsigned int id, unsigned int shapeID,
-      float density);
+   void   updateShapeDensity(unsigned int id, unsigned int shapeID,
+                             float density);
 
    /// Update the mass of a physical actor.
    ///
@@ -731,7 +741,7 @@ extern "C"
    ///
    /// @return If the mass was updated
    ///
-   bool updateActorMass(unsigned int id, float mass);
+   bool   updateActorMass(unsigned int id, float mass);
 
    /// Method to create a ground plane to prevent actors from falling forever.
    ///
@@ -759,29 +769,49 @@ extern "C"
    /// @param posts The array of height values that will be used to generate
    /// the height field.
    ///
-   void setHeightField(unsigned int terrainActorID,
-      unsigned int terrainShapeID, int regionSizeX, int regionSizeY, 
-      float rowSpacing, float columnSpacing, float * posts);
+   void   setHeightField(unsigned int terrainActorID,
+                         unsigned int terrainShapeID, int regionSizeX,
+                         int regionSizeY, float rowSpacing, float columnSpacing,
+                         float * posts);
 
    /// Add a joint between two actors.
    ///
-   /// @param jointID The unique identifier of the joint being added
-   /// @param actorID1 The unique identifier of the first actor being joined
-   /// @param actorID2 The unique identifier of the second actor being joined
-   /// @param actorPos1 The position of joint relative to the first actor
-   /// @param actorQuat1 The orientation of joint relative to the first actor
-   /// @param actorPos2 The position of joint relative to the second actor
-   /// @param actorQuat2 The orientation of joint relative to the second actor
-   /// @param linearLowerLimit Lower limits of each of the 3 translation axes
-   /// @param linearUpperLimit Upper limits of each of the 3 translation axes
-   /// @param angularLowerLimit Lower limits of each of the 3 rotational axes
-   /// @param angularUpperLimit Upper limits of each of the 3 rotational axes
+   /// @param jointID The unique identifier of the joint being added.
+   /// @param actorID1 The unique identifier of the first actor being joined.
+   /// @param actorID2 The unique identifier of the second actor being joined.
+   /// @param actorPos1 The position of joint relative to the first actor.
+   /// @param actorQuat1 The orientation of joint relative to the first actor.
+   /// @param actorPos2 The position of joint relative to the second actor.
+   /// @param actorQuat2 The orientation of joint relative to the second actor.
+   /// @param linearLowerLimit Lower limits of each of the 3 translation axes.
+   /// @param linearUpperLimit Upper limits of each of the 3 translation axes.
+   /// @param angularLowerLimit Lower limits of each of the 3 rotational axes.
+   /// @param angularUpperLimit Upper limits of each of the 3 rotational axes.
    ///
    void   addJoint(unsigned int jointID, unsigned int actorID1,
-      unsigned int actorID2, float * actor1Pos, float * actor1Quat,
-      float * actor2Pos, float * actor2Quat, float * linearLowerLimit,
-      float * linearUpperLimit, float * angularLowerLimit,
-      float * angularUpperLimit);
+                   unsigned int actorID2, float * actor1Pos, float * actor1Quat,
+                   float * actor2Pos, float * actor2Quat,
+                   float * linearLowerLimit, float * linearUpperLimit,
+                   float * angularLowerLimit, float * angularUpperLimit);
+
+   /// Add a joint between an actor and the global frame.
+   ///
+   /// @param jointID The unique identifier of the joint being added.
+   /// @param actorID The unique identifier of the joint.
+   /// @param actorPos The position of joint relative to the actor.
+   /// @param actorQuat The orientation of joint relative to the actor.
+   /// @param linearLowerLimit Lower limits of each of the 3 translation axes.
+   /// @param linearUpperLimit Upper limits of each of the 3 translation axes.
+   /// @param angularLowerLimit Lower limits of each of the 3 rotational axes.
+   /// @param angularUpperLimit Upper limits of each of the 3 rotational axes.
+   ///
+   void   addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
+                              float * actorPos, float * actorQuat,
+                              float * linearLowerLimit,
+                              float * linearUpperLimit,
+                              float * angularLowerLimit,
+                              float * angularUpperLimit);
+
 
    /// Remove joint from the physics scene.
    ///
@@ -799,4 +829,25 @@ extern "C"
    ///
    void   simulate(float time, unsigned int * updatedEntityCount,
       unsigned int * updatedCollisionCount);
+
+   /// Construct a joint between two actors.
+   ///
+   /// @param jointID The unique identifier of the joint being added
+   /// @param actor1 The first actor being joined.
+   /// @param actor2 The second actor being joined.
+   /// @param actorPos1 The position of joint relative to the first actor
+   /// @param actorQuat1 The orientation of joint relative to the first actor
+   /// @param actorPos2 The position of joint relative to the second actor
+   /// @param actorQuat2 The orientation of joint relative to the second actor
+   /// @param linearLowerLimit Lower limits of each of the 3 translation axes
+   /// @param linearUpperLimit Upper limits of each of the 3 translation axes
+   /// @param angularLowerLimit Lower limits of each of the 3 rotational axes
+   /// @param angularUpperLimit Upper limits of each of the 3 rotational axes
+   ///
+   void   constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
+                         PhysXRgidiActor * actor2, float * actor1Pos,
+                         float * actor1Quat, float * actor2Pos,
+                         float * actor2Quat, float * linearLowerLimit,
+                         float * linearUpperLimit, float * angularLowerLimit,
+                         float * angularUpperLimit);
 }

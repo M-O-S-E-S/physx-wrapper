@@ -641,7 +641,7 @@ PHYSX_API void createActor(
    PhysXRigidActor *   actor;
    atInt *             checkID;
 
-   // Create a new atint that will be used to search the map for a duplicate
+   // Create a new key that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1560,7 +1560,6 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
 }
 
 
-
 PHYSX_API float getActorMass(unsigned int id)
 {
    PhysXRigidActor * rigidActor;
@@ -1998,15 +1997,13 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
 }
 
 
-PHYSX_API void addJoint(
-   unsigned int jointID, unsigned int actorID1, unsigned int actorID2,
-   float * actor1Pos, float * actor1Quat, float * actor2Pos,
-   float * actor2Quat, float * linearLowerLimit, float * linearUpperLimit,
-   float * angularLowerLimit, float * angularUpperLimit)
+void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
+                    PhysXRigidActor * actor2, float * actor1Pos,
+                    float * actor1Quat, float * actor2Pos, float * actor2Quat,
+                    float * linearLowerLimit, float * linearUpperLimit,
+                    float * angularLowerLimit, float * angularUpperLimit)
 {
    PhysXJoint *                physXJoint;
-   PhysXRigidActor *           actor1;
-   PhysXRigidActor *           actor2;
    PxRigidActor *              rigidActor1;
    PxRigidActor *              rigidActor2;
    PxD6Joint *                 joint;
@@ -2017,18 +2014,8 @@ PHYSX_API void addJoint(
    PxTransform                 actor2Frame;
    float                       ySwingLimit;
    float                       zSwingLimit;
-
-   // Check whether or not a joint with the given ID already exists;
-   // can't have the same IDs for different joints
-   physXJoint = (PhysXJoint *)joint_map->getValue(new atInt(jointID));
-   if (physXJoint != NULL)
-   {
-      return;
-   }
-
-   // Get the actors associated with a joint from the given actor IDs
-   actor1 = getActor(actorID1);
-   actor2 = getActor(actorID2);
+   unsigned int                actor1ID;
+   unsigned int                actor2ID;
 
    // Check whether or not the given actor exists and get reference to
    // the PhysX rigid actor; otherwise rigid actor is NULL which would
@@ -2036,7 +2023,6 @@ PHYSX_API void addJoint(
    if (actor1 != NULL)
    {
       rigidActor1 = actor1->getRigidActor();
-      logger->notify(AT_INFO, "Joint actor1: %d\n", actor1->isDynamic());
    }
    else
       rigidActor1 = NULL;
@@ -2046,7 +2032,6 @@ PHYSX_API void addJoint(
    if (actor2 != NULL)
    {
       rigidActor2 = actor2->getRigidActor();
-      logger->notify(AT_INFO, "Joint actor2: %d\n", actor2->isDynamic());
    }
    else
       rigidActor2 = NULL;
@@ -2062,15 +2047,9 @@ PHYSX_API void addJoint(
    joint = PxD6JointCreate(
       *px_physics, rigidActor1, actor1Frame, rigidActor2, actor2Frame);
 
-   if (rigidActor1 != NULL && actor1->isDynamic())
-      ((PxRigidDynamic *)rigidActor1)->wakeUp();
-
-   if (rigidActor2 != NULL && actor2->isDynamic())
-      ((PxRigidDynamic *)rigidActor2)->wakeUp();
-
    // Indicate that this joint should be enforced, even under extreme duress
-   //joint->setProjectionLinearTolerance(0.1f);
-   //joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+   joint->setProjectionLinearTolerance(0.1f);
+   joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
 
    // Adjust linear constraints of the joint based on the given limits
    // for each of the translational axes
@@ -2163,19 +2142,99 @@ PHYSX_API void addJoint(
       joint->setSwingLimit(*swingLimits);
    }
 
+   // Obtain IDs for both given actors (if they are valid)
+   actor1ID = 0;
+   actor2ID = 0;
+   if (actor1 != NULL)
+      actor1ID = actor1->getID()->getValue();
+   if (actor2 != NULL)
+      actor2ID = actor2->getID()->getValue();
+
    // Create a new container to hold the joint information
-   physXJoint = new PhysXJoint(joint, jointID, actorID1, actorID2);
-   PxRigidBody * temp;
-   temp = (PxRigidBody *)rigidActor1;
-   if (temp)
-      temp->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
-   temp = (PxRigidBody *)rigidActor2;
-   if (temp)
-      temp->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
+   physXJoint = new PhysXJoint(joint, jointID, actor1ID, actor2ID);
 
    // Save reference to the new joint
    joint_map->addEntry(new atInt(jointID), physXJoint);
+} 
+
+
+PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
+                        unsigned int actorID2, float * actor1Pos,
+                        float * actor1Quat, float * actor2Pos,
+                        float * actor2Quat, float * linearLowerLimit,
+                        float * linearUpperLimit, float * angularLowerLimit,
+                        float * angularUpperLimit)
+{
+   PhysXJoint *                physXJoint;
+   PhysXRigidActor *           actor1;
+   PhysXRigidActor *           actor2;
+   atInt *                     jointKey;
+
+   // Create a key from the joint ID, so that it can be used to search
+   // the joint map
+   jointKey = new atInt(jointID);
+
+   // Check whether or not a joint with the given ID already exists;
+   // can't have the same IDs for different joints
+   physXJoint = (PhysXJoint *)joint_map->getValue(jointKey);
+   if (physXJoint != NULL)
+   {
+      return;
+   }
+
+   // Get the actors associated with a joint from the given actor IDs
+   actor1 = getActor(actorID1);
+   actor2 = getActor(actorID2);
+
+   // Construct the joint using the actors that were found
+   constructJoint(jointID, actor1, actor2, actor1Pos, actor1Quat, actor2Pos,
+                  actor2Quat, linearLowerLimit, linearUpperLimit,
+                  angularLowerLimit, angularUpperLimit);
+
+   // Now that the operation is complete, clean up the key
+   delete jointKey;
 }
+
+
+PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
+                                   float * actorPos, float * actorQuat,
+                                   float * linearLowerLimit,
+                                   float * linearUpperLimit,
+                                   float * angularLowerLimit,
+                                   float * angularUpperLimit)
+{
+   PhysXJoint *                physXJoint;
+   PhysXRigidActor *           actor1;
+   PhysXRigidActor *           actor2;
+   atInt *                     jointKey;
+
+   // Create a key from the joint ID, so that it can be used to search
+   // the joint map
+   jointKey = new atInt(jointID);
+
+   // Check whether or not a joint with the given ID already exists;
+   // can't have the same IDs for different joints
+   physXJoint = (PhysXJoint *)joint_map->getValue(jointKey);
+   if (physXJoint != NULL)
+   {
+      return;
+   }
+
+   // Find the actor with the given ID
+   actor1 = getActor(actorID);
+
+   // The second actor will be null in order to signify the global frame
+   actor2 = NULL;
+
+   // Construct the joint using the actors that were found
+   constructJoint(jointID, actor1, actor2, actorPos, actorQuat, actorPos,
+                  actorQuat, linearLowerLimit, linearUpperLimit,
+                  angularLowerLimit, angularUpperLimit);
+
+   // Now that the operation is complete, clean up the key
+   delete jointKey;
+}
+
 
 
 PHYSX_API void removeJoint(unsigned int id)

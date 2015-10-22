@@ -125,6 +125,7 @@ PhysXRigidActor::~PhysXRigidActor()
    // Clean up the map containing the shape attached to this actor
    delete actor_shapes;
 
+   // Clean up the ID of this actor
    delete actor_id;
 
    // Clean up the PxActor; this will also delete the actor
@@ -147,6 +148,8 @@ void PhysXRigidActor::setID(unsigned int id)
    // Save the new identifier to an atInt in order to use the atMap
    actor_id = new atInt(id);
 
+   // Assign the ID to the actor's user data, so that this actor can be
+   // identified in PhysX callbacks
    rigid_actor->userData = actor_id;
 }
 

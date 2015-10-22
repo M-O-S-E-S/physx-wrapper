@@ -162,7 +162,7 @@ class PhysXRigidActor : public atItem
       /// @param density The density of the shape
       ///
       void             addShape(unsigned int shapeId, PxShape * shape,
-                          float density);
+                                float density);
       
       /// Fetches a shape attached to the actor.
       ///
