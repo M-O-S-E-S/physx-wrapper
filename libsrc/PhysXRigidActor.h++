@@ -51,30 +51,30 @@ class PhysXRigidActor : public atItem
    protected:
       /// Current PhysX actor reference.
       ///
-      PxRigidActor *     rigid_actor;
+      PxRigidActor *       rigid_actor;
 
       /// The shapes that are attached to this actor and represent it in the
       /// physical scene.
       ///
-      atMap *            actor_shapes;
+      atMap *              actor_shapes;
 
       /// The name of this actor.
       ///
-      atString *         actor_name;
+      atString *           actor_name;
 
       /// The identifier of this PhysX object used to quickly locate the actor
       /// inside of maps.
       ///
-      atInt *            actor_id;
+      atInt *              actor_id;
 
       /// Stores whether this actor is dynamic or static actor.
       ///
-      ActorType          actor_type;
+      ActorType            actor_type;
 
       /// Updates the densities associated PhysX actor based on the densities
       /// of the various shapes attached to the actor.
       ///
-      void               updateDensity();
+      void                 updateDensity();
 
       /// The default density used when a given density is invalid
       ///

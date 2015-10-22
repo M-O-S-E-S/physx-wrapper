@@ -295,11 +295,11 @@ extern "C"
    /// @param halfY Half the width of the box.
    /// @param halfZ Half the height of the box.
    /// @param x The position of the box along the x-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the box is being attached.
    /// @param y The position of the box along the y-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the box is being attached.
    /// @param z The position of the box along the z-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the box is being attached.
    /// @param rotX The x-value of the quaternion representing orientation of the
    /// box relative to the actor.
    /// @param rotY The y-value of the quaternion representing orientation of the
@@ -330,11 +330,11 @@ extern "C"
    /// @param halfHeight Half the height of the capsule.
    /// @param radius The radius of the capsule.
    /// @param x The position of the capsule along the x-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the capsule is being attached.
    /// @param y The position of the capsule along the y-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the capsule is being attached.
    /// @param z The position of the capsule along the z-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the capsule is being attached.
    /// @param rotX The x-value of the quaternion representing the orientation
    /// of the capsule relative to the actor.
    /// @param rotY The y-value of the quaternion representing the orientation
@@ -367,11 +367,11 @@ extern "C"
    /// @param vertexCount The number of vertices given for this mesh.
    /// @param indexCount The number of indices given for this mesh.
    /// @param x The position of the mesh along the x-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param y The position of the mesh along the y-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param z The position of the mesh along the z-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param rotX The x-value of the quaternion representing the orientation
    /// of the mesh relative to the actor.
    /// @param rotY The y-value of the quaternion representing the orientation
@@ -406,11 +406,11 @@ extern "C"
    /// @param vertices The list of vertices that make up the convex mesh.
    /// @param vertexCount The size of the list of vertices.
    /// @param x The position of the mesh along the x-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param y The position of the mesh along the y-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param z The position of the mesh along the z-axis relative to the
-   /// position of the actor to which the sphere is being attached.
+   /// position of the actor to which the mesh is being attached.
    /// @param rotX The x-value of the quaternion representing the orientation
    /// of the mesh relative to the actor.
    /// @param rotY The y-value of the quaternion representing the orientation

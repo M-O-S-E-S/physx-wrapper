@@ -1043,8 +1043,6 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
       meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
       meshDesc.vertexLimit = 256;
 
-      logger->notify(AT_INFO, "Convex mesh vertex array count: %d\n",
-         vertexCount);
       // Attempt to 'cook' the mesh data into a form which allows PhysX to
       // perform efficient collision detection; results are written to
       // the stream buffer
@@ -1527,6 +1525,7 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       // initialized, and exit
       logger->notify(AT_WARN, "Failed to update material. Scene not "
          "initialized.\n");
+      return;
    }
 
    // Create a temporary atInt for the ID that will be used to search the
@@ -1998,10 +1997,10 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
 
 
 void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
-                    PhysXRigidActor * actor2, float * actor1Pos,
-                    float * actor1Quat, float * actor2Pos, float * actor2Quat,
-                    float * linearLowerLimit, float * linearUpperLimit,
-                    float * angularLowerLimit, float * angularUpperLimit)
+   PhysXRigidActor * actor2, float * actor1Pos,
+   float * actor1Quat, float * actor2Pos, float * actor2Quat,
+   float * linearLowerLimit, float * linearUpperLimit,
+   float * angularLowerLimit, float * angularUpperLimit)
 {
    PhysXJoint *                physXJoint;
    PxRigidActor *              rigidActor1;
@@ -2159,11 +2158,11 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
 
 
 PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
-                        unsigned int actorID2, float * actor1Pos,
-                        float * actor1Quat, float * actor2Pos,
-                        float * actor2Quat, float * linearLowerLimit,
-                        float * linearUpperLimit, float * angularLowerLimit,
-                        float * angularUpperLimit)
+   unsigned int actorID2, float * actor1Pos,
+   float * actor1Quat, float * actor2Pos,
+   float * actor2Quat, float * linearLowerLimit,
+   float * linearUpperLimit, float * angularLowerLimit,
+   float * angularUpperLimit)
 {
    PhysXJoint *                physXJoint;
    PhysXRigidActor *           actor1;
@@ -2197,11 +2196,9 @@ PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
 
 
 PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
-                                   float * actorPos, float * actorQuat,
-                                   float * linearLowerLimit,
-                                   float * linearUpperLimit,
-                                   float * angularLowerLimit,
-                                   float * angularUpperLimit)
+   float * actorPos, float * actorQuat, float * linearLowerLimit,
+   float * linearUpperLimit, float * angularLowerLimit,
+   float * angularUpperLimit)
 {
    PhysXJoint *                physXJoint;
    PhysXRigidActor *           actor1;
