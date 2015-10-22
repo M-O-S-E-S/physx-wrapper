@@ -35,6 +35,9 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
 {
    PxTransform   actorPos;
 
+   // Set the name of the class for the user notification messages
+   atNotifier::setName("[PhysXRigidActor] ");
+
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z));
 
@@ -76,6 +79,9 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
    float x, float y, float z, PxQuat rot, ActorType type)
 {
    PxTransform   actorPos;
+
+   // Set the name of the class for the user notification messages
+   setName("[PhysXRigidActor] ");
 
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z), rot);
@@ -480,9 +486,13 @@ void PhysXRigidActor::enableGravity(bool enabled)
    // Update whether gravity should affect this actor, normally used for static
    // actors or flying avatars
    if (enabled)
-      rigid_actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-   else
+   {
       rigid_actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
+   }
+   else
+   {
+      rigid_actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+   }
 }
 
 

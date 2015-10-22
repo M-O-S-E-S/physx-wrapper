@@ -32,9 +32,7 @@
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
-
-// SDS
-//#include <crtdbg.h>
+#include "PhysXAggregate.h++"
 
 
 #ifdef _WIN32
@@ -62,6 +60,7 @@ static bool                              scene_initialized = false;
 
 static int                               max_updates;
 
+static atMap *                           aggregate_map = new atMap();
 static atMap *                           actor_map = new atMap();
 static atMap *                           joint_map = new atMap();
 
@@ -189,7 +188,6 @@ PxFilterFlags contactFilterShader(PxFilterObjectAttributes attributes0,
       pairFlags = PxPairFlag::eCONTACT_DEFAULT | PxPairFlag::eTRIGGER_DEFAULT |
          PxPairFlag::eNOTIFY_TOUCH_PERSISTS |
          PxPairFlag::eNOTIFY_CONTACT_POINTS;
-
       return PxFilterFlag::eDEFAULT;
    }
 
@@ -220,7 +218,7 @@ void startVisualDebugger()
    }
 
    // Create the ip address, port, and timeout for the connection
-   const char * pvd_host_ip = "10.171.195.111";
+   const char * pvd_host_ip = "127.0.0.1";
    int port = 5425;
    unsigned int timeout = 100;
 
@@ -245,13 +243,12 @@ void startVisualDebugger()
 
 //-----------------------------------------------------------------------------
 
-
 PHYSX_API int initialize()
 {
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
-    
+   
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
       PX_PHYSICS_VERSION, allocator_callback, error_callback);
@@ -262,7 +259,9 @@ PHYSX_API int initialize()
 
    // Return 0 (false) if the physics object could not be created
    if (px_physics == NULL)
+   {
       return 0;
+   }
 
    // Create a cooking object that will generate meshes
    px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation,
@@ -322,6 +321,133 @@ PHYSX_API void initCollisionUpdate(
    {
        px_collisions->setCollisionsArray(collisions_array, maxCollisions);
    }
+}
+
+
+PHYSX_API void createAggregate(unsigned int id)
+{
+   PxAggregate *   aggregate;
+   PhysXAggregate *   physXAggregate;
+   atInt *   tempId;
+
+   // Create and initialize the aggregate id as an atInt
+   tempId = new atInt(id);
+
+   // Try to get the PxAggregate pointer from the aggregate map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // If the aggregate returned exists, return the function call
+   // because we cannot have multiple of the same id'd aggregates
+   if (physXAggregate != NULL)
+   {
+      return;
+   }
+
+   // Create a new PxAggregate from our PxPhysics instance
+   // with a limitation of 128 entities per aggregate instance
+   // (Hard limit imposed by the PhysX engine)
+   aggregate = px_physics->createAggregate(128, false);
+
+   // Add the PhysX PxAggregate instance to the scene if the
+   // scene has already been initialized
+   if(scene_initialized == 1)
+   {
+      px_scene->addAggregate(*aggregate);
+   }
+
+   // Create a new container to hold our aggregate instance
+   physXAggregate = new PhysXAggregate(aggregate, id);
+
+   // Add a new entry for the PxAggregate to our aggregate_map
+   aggregate_map->addEntry(new atInt(id), physXAggregate);
+}
+
+
+PHYSX_API void removeAggregate(unsigned int id)
+{
+   PhysXAggregate *   aggregate;
+   atInt *   aggregateId;
+
+   // Create the aggregate id as an atInt for storing
+   // the PhysXAggregate within the atMap
+   aggregateId = new atInt(id);
+
+   // Remove the aggregate from the map
+   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(aggregateId);
+
+   // Clean up the aggregate if it existed
+   if (aggregate != NULL)
+   {
+      // Remove the PxAggregate instance from the scene
+      px_scene->removeAggregate(*aggregate->getAggregate());
+
+      // Release the memory used up by the PhysXAggregate
+      aggregate->release();
+   }
+}
+
+
+PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
+{
+   PhysXAggregate *   physXAggregate;
+   PhysXRigidActor *   physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
+
+   // Try to get the PxAggregate pointer from the aggregate map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // Try to get the PxActor pointer from the actor map
+   physXActor = (PhysXRigidActor *) getActor(actorId);
+
+   // If there is no aggregate by the given id, return (0) || (false)
+   if (physXAggregate == NULL)
+   {
+      return 0;
+   }
+
+   // If there is no actor by the given id, return (0) || (false)
+   if (physXActor == NULL)
+   {
+      return 0;
+   }
+
+   // Return the result of adding the actor from the aggregate
+   return (int) physXAggregate->addActor(physXActor);
+}
+
+
+PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId)
+{
+   PhysXAggregate * physXAggregate;
+   PhysXRigidActor * physXActor;
+   atInt *   tempId;
+
+   // Initialize the atInt aggregate identifier
+   tempId = new atInt(aggregateId);
+
+   // Try to get the PxAggregate from the aggregate_map
+   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
+
+   // Try to get the PxActor pointer from the actor_map
+   physXActor = (PhysXRigidActor *) getActor(actorId);
+
+   // If there is no aggregate by the given id, return (0) || (false)
+   if (physXAggregate == NULL)
+   {
+      return 0;
+   }
+
+   // If there is no actor by the given id, return (0) || (false)
+   if (physXActor == NULL)
+   {
+      return 0;
+   }
+
+   // Return the result of removing the actor from the aggregate
+   return (int) physXAggregate->removeActor(physXActor);
 }
 
 
@@ -414,15 +540,15 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                }
                else
                {
-                  // Finish creating the PhysX CUDA context manager description 
-                  // by storing the CUDA context and a NULL graphics device 
+                  // Finish creating the PhysX CUDA context manager description
+                  // by storing the CUDA context and a NULL graphics device
                   cudaManagerDesc.ctx = &cudaContext;
                   cudaManagerDesc.graphicsDevice = (void *) NULL;
 
                   // Attempt to create the PhysX CUDA context manager
                   cudaContextManager = PxCreateCudaContextManager(
                      *px_foundation, cudaManagerDesc, profileZoneManager);
-                  
+
                   // Check that the PhysX CUDA context manager was created
                   if (cudaContextManager == NULL)
                   {
@@ -441,7 +567,7 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
                   else
                   {
                      // The GPU dispatcher is ready so add it to the scene
-                     sceneDesc.gpuDispatcher = 
+                     sceneDesc.gpuDispatcher =
                         cudaContextManager->getGpuDispatcher();
 
                      // Let the user know that the GPU is in use
@@ -456,40 +582,26 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
       #endif
    }
 
-   // This check will enable the CPU if the user wanted it enabled, but it will
-   // also recover from a GPU failure and initialise the CPU
-   if (!gpuEnabled || cpuEnabled)
+   // The CPU dispatcher is needed for interfacing with the application's
+   // thread pool; check if the scene description already has one
+   if (sceneDesc.cpuDispatcher == NULL)
    {
-      // The CPU dispatcher is needed for interfacing with the application's
-      // thread pool; check if the scene description already has one
-      if (sceneDesc.cpuDispatcher == NULL)
+      // No dispatcher found so create a new one with one worker thread to
+      // start
+      cpuDispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
+
+      // Return 0 (false) if CPU dispatcher failed to create
+      if (cpuDispatcher == NULL)
       {
-         // Confirm that the CPU was supposed to be used
-         if (!cpuEnabled)
-         {
-            // Since the CPU was not originally going to be in use assign 0 as
-            // the thread count to force the program to use the same thread as
-            // the wrapper
-            cpuMaxThreads = 0;
-         }
+         return 0;
+      }
+      else if (cpuDispatcher != NULL)
+      {
+         // Notify the user that the CPU is currently in use
+         logger->notify(AT_INFO, "CPU enabled.\n");
 
-         // No dispatcher found so create a new one with one worker thread to
-         // start
-         cpuDispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
-
-         // Return 0 (false) if CPU dispatcher failed to create
-         if (cpuDispatcher == NULL && !gpuEnabled)
-         {
-            return 0;
-         }
-         else if (cpuDispatcher != NULL)
-         {
-            // Notify the user that the CPU is currently in use
-            logger->notify(AT_INFO, "CPU enabled.\n");
-
-            // Assign the created dispatcher to the scene description
-            sceneDesc.cpuDispatcher = cpuDispatcher;
-         }
+         // Assign the created dispatcher to the scene description
+         sceneDesc.cpuDispatcher = cpuDispatcher;
       }
    }
 
@@ -1218,7 +1330,7 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       actor = createRigidActor(id, name, x, y, z, isDynamic);
 
       // Create a new material; used to resolve collisions
-      material = px_physics->createMaterial(staticFriction, dynamicFriction, 
+      material = px_physics->createMaterial(staticFriction, dynamicFriction,
          restitution);
 
       // Convert the given array of vertex points to an array of PhysX vectors,
@@ -1371,7 +1483,9 @@ PHYSX_API void removeActor(unsigned int id)
 
    // Can't remove actor if scene has not been initialized yet
    if (scene_initialized == false)
+   {
       return;
+   }
 
    // Try and remove the given actor from the map and check to see
    // if the actor exists
@@ -1384,7 +1498,6 @@ PHYSX_API void removeActor(unsigned int id)
       return;
    }
 
-   logger->notify(AT_INFO, "Removing actor %u\n", id);
    px_scene->lockWrite();
 
    // Remove the desired actor from the scene and specify that all
@@ -1461,7 +1574,7 @@ PHYSX_API float getActorMass(unsigned int id)
    {
       return rigidActor->getMass();
    }
-
+   
    // Otherwise, return 0.0f
    return 0.0f;
 }
@@ -1480,7 +1593,7 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
    {
       return rigidActor->addForce(force);
    }
-
+   
    return false;
 }
 
@@ -1905,14 +2018,13 @@ PHYSX_API void addJoint(
    float                       ySwingLimit;
    float                       zSwingLimit;
 
-   // SDS
-   //int iPrev = _CrtSetReportMode(_CRT_ASSERT, 0);
-
    // Check whether or not a joint with the given ID already exists;
    // can't have the same IDs for different joints
    physXJoint = (PhysXJoint *)joint_map->getValue(new atInt(jointID));
    if (physXJoint != NULL)
+   {
       return;
+   }
 
    // Get the actors associated with a joint from the given actor IDs
    actor1 = getActor(actorID1);
@@ -2063,9 +2175,6 @@ PHYSX_API void addJoint(
 
    // Save reference to the new joint
    joint_map->addEntry(new atInt(jointID), physXJoint);
-
-   // SDS
-   //_CrtSetReportMode(_CRT_ASSERT, iPrev);
 }
 
 
@@ -2087,7 +2196,6 @@ PHYSX_API void simulate(float time,
 {
    const PxActiveTransform *   activeTransforms;
    PxRigidDynamic *            actor;
-   EntityProperties *          updatedActors;
    atInt *                     actorID;
    unsigned int                numTransforms;
    PxVec3                      position;
@@ -2096,9 +2204,6 @@ PHYSX_API void simulate(float time,
    PxVec3                      angularVelocity;
 
    px_scene->lockRead();
-
-   // SDS
-   //int iPrev = _CrtSetReportMode(_CRT_ASSERT, 0);
 
    // Advance the world forward in time
    px_scene->simulate(time);
@@ -2111,10 +2216,6 @@ PHYSX_API void simulate(float time,
    // the last simulation step
    numTransforms = 0;
    activeTransforms = px_scene->getActiveTransforms(numTransforms);
-
-   // New array to keep track of the physical properties of the active
-   // transforms
-   updatedActors = new EntityProperties[max_updates];
 
    // Go through all active actors
    for (unsigned int i = 0; i < numTransforms; i++)
@@ -2131,49 +2232,49 @@ PHYSX_API void simulate(float time,
 
       // Update the actor's position
       position = activeTransforms[i].actor2World.p;
-      updatedActors[i].PositionX = position.x;
-      updatedActors[i].PositionY = position.y;
-      updatedActors[i].PositionZ = position.z;
+      update_array[i].PositionX = position.x;
+      update_array[i].PositionY = position.y;
+      update_array[i].PositionZ = position.z;
 
       // Update the actor's orientation
       rotation = activeTransforms[i].actor2World.q;
-      updatedActors[i].RotationX = rotation.x;
-      updatedActors[i].RotationY = rotation.y;
-      updatedActors[i].RotationZ = rotation.z;
-      updatedActors[i].RotationW = rotation.w;
+      update_array[i].RotationX = rotation.x;
+      update_array[i].RotationY = rotation.y;
+      update_array[i].RotationZ = rotation.z;
+      update_array[i].RotationW = rotation.w;
 
       // Update the actor's velocity
       velocity = actor->getLinearVelocity();
-      updatedActors[i].VelocityX = velocity.x;
-      updatedActors[i].VelocityY = velocity.y;
-      updatedActors[i].VelocityZ = velocity.z;
+      update_array[i].VelocityX = velocity.x;
+      update_array[i].VelocityY = velocity.y;
+      update_array[i].VelocityZ = velocity.z;
 
       // Update the actor's angular velocity
       angularVelocity = actor->getAngularVelocity();
-      updatedActors[i].AngularVelocityX = angularVelocity.x;
-      updatedActors[i].AngularVelocityY = angularVelocity.y;
-      updatedActors[i].AngularVelocityZ = angularVelocity.z;
+      update_array[i].AngularVelocityX = angularVelocity.x;
+      update_array[i].AngularVelocityY = angularVelocity.y;
+      update_array[i].AngularVelocityZ = angularVelocity.z;
 
       // Save the actor's ID if one was saved in the actor's user data;
       // if the ID wasn't found, that means that this is an actor that
       // we are not keeping track of so just give it a default ID value
       if (actorID != NULL)
-         updatedActors[i].ID = actorID->getValue();
+         update_array[i].ID = actorID->getValue();
       else
-         updatedActors[i].ID = 0;
-
-      // Save the physical properties of this actor in the update array;
-      // this updates the array data in the calling application
-      update_array[i] = updatedActors[i];
+         update_array[i].ID = 0;
    }
 
    // Update the number of active transforms and collisions,
    // in this step, by reference
-   *updatedEntityCount = numTransforms;
+   if (numTransforms < max_updates)
+   {
+      *updatedEntityCount = numTransforms;
+   }
+   else
+   {
+      *updatedEntityCount = max_updates;
+   }
    px_collisions->getCollisions(updatedCollisionCount);
-
-   // SDS
-   //_CrtSetReportMode(_CRT_ASSERT, iPrev);
 
    px_scene->unlockRead();
 }
