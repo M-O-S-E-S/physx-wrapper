@@ -462,9 +462,8 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    CUdevice                   cudaDevice;
    CUcontext                  cudaContext;
 
-   // TODO: the gravity sets the normals for the scene: currently
-   // set the gravity to the z-axis because of OpenSim; this should
-   // be given instead
+   // TODO: include support for setting gravity normal rather than
+   // assume z-axis as OpenSim does (normal should be passed in)
 
    // Create the descriptor class for the scene with the default tolerance
    // parameters for the simulation and real-world gravity
@@ -1274,9 +1273,10 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
       geometry = PxCapsuleGeometry(halfHeight, radius);
       shape = px_physics->createShape(geometry, *material, true);
 
-      // TODO: Relative transform should be given
       // Create a relative transform for the capsule geometry to stand
       // upright; rotate transform around the Z-axis by a quater-circle
+      // TODO: Allow for relative transform to be specified rather than
+      // using OpenSim axes
       relativePose = PxTransform(PxQuat(PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)));
       shape->setLocalPose(relativePose);
 
@@ -1831,14 +1831,14 @@ PHYSX_API void createGroundPlane(float x, float y, float z)
    planePos = PxTransform(PxVec3(x, y, z),
       PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f)));
 
-   // TODO: Pass material
    // Create a default material (static friction, dynamic friction,
    // and restituion) for the ground plane
+   // TODO: Pass in material rather than using OpenSim default
    material = px_physics->createMaterial(0.5, 0.5, 0.5);
 
-   // TODO: The normals need to be passed into this method
    // Create a rigid static actor to represent the terrain and create
    // the plane geometry to define its shape
+   // TODO: Allow normals to be passed in rather than assume OpenSim axes
    ground_plane = PxCreatePlane(*px_physics, PxPlane(PxVec3(0,0,1),0),
       *material);
 
@@ -1874,7 +1874,8 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    PhysXRigidActor *         actor;
    atInt *                   terrainID;
 
-   // TODO: Check that the terrain is added to the correct scene
+   // TODO: Check that the terrain is added to the correct scene for 
+   // mega region support
 
    // Make sure the scene has been initialized
    if (scene_initialized != true)
@@ -1929,7 +1930,6 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    // Store the sample array inside of the height field description
    heightFieldDescription.samples = stridedData;
 
-   // TODO: Add in other ways of making the height field
    // Cooks the height field using the description that was just created
    heightField = px_cooking->createHeightField(heightFieldDescription,
       px_physics->getPhysicsInsertionCallback());
@@ -1952,7 +1952,8 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
       PxMeshGeometryFlags(), height_field_scale, rowSpacing, columnSpacing);
 
    // Create a default material
-   // TODO: Change this to be passed in by the function
+   // TODO: Allow this to be passed into function rather than assuming
+   // default for OpenSim
    physxMaterial = px_physics->createMaterial(0.2f, 0.2f, 0.0f);
 
    // Use the geometry and material to create the terrain shape
@@ -1983,7 +1984,7 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    // Rotate the height map to the correct world position, this is needed
    // because the height map is just a list of heights and doesn't include the
    // position or orientation
-   // TODO: Fix this to allow for mega regions
+   // TODO: Alter this to allow for mega regions
    newShape->setLocalPose(PxTransform(PxVec3(0.0f, 0.0f, 0.0f),
       PxQuat(0.5f, 0.5f, 0.5f, 0.5f)));
 
@@ -2283,8 +2284,6 @@ PHYSX_API void simulate(float time,
       // Get the affected actor and its ID from its user data
       actor = (PxRigidDynamic *)activeTransforms[i].actor;
       actorID = reinterpret_cast<atInt *>(actor->userData);
-
-      // TODO: temp use of prim types instead of Object type
 
       // Update the actor's position
       position = activeTransforms[i].actor2World.p;

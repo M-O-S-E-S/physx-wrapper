@@ -415,6 +415,7 @@ float * PhysXRigidActor::getPosition()
    retValue[1] = position.y;
    retValue[2] = position.z;
 
+// GAM CHECK
    // Return the current position of this actor
    return retValue;
 }
@@ -453,6 +454,7 @@ float * PhysXRigidActor::getRotation()
    retValue[2] = quaternion.z;
    retValue[3] = quaternion.w;
 
+// GAM CHECK
    // Return the current orientation of this actor
    return retValue;
 }
@@ -479,8 +481,7 @@ void PhysXRigidActor::setAngularVelocity(float x, float y, float z)
 void PhysXRigidActor::setGravity(float x, float y, float z)
 {
    // TODO: Currently commands for changing the gravity are not handled by
-   // opensim except to turn gravity on and off. A later commit will implement
-   // this.
+   // OpenSim except to turn gravity on and off.
 }
 
 
