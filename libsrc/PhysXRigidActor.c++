@@ -385,14 +385,14 @@ void PhysXRigidActor::setTranslation(float posX, float posY, float posZ,
 }
 
 
-void PhysXRigidActor::setPosition(float x, float y, float z)
+void PhysXRigidActor::setPosition(ActorPosition pos)
 {
    PxTransform   transform;
    PxQuat        quaternion;
 
    // Create the new position with the given values
    quaternion = rigid_actor->getGlobalPose().q;
-   transform = PxTransform(PxVec3(x, y, z), quaternion);
+   transform = PxTransform(PxVec3(pos.x, pos.y, pos.z), quaternion);
 
    // Update the actor's position and indicate that it should be
    // woken up so that it can be updated during the simulation step
@@ -400,28 +400,26 @@ void PhysXRigidActor::setPosition(float x, float y, float z)
 }
 
 
-float * PhysXRigidActor::getPosition()
+ActorPosition PhysXRigidActor::getPosition()
 {
-   PxVec3    position;
-   float *   retValue;
+   PxVec3          position;
+   ActorPosition   retPosition;
 
    // Acquire the current position of this actor
    position = rigid_actor->getGlobalPose().p;
 
    // Store the position values so that PhysX does not change the values while
    // the information is being used
-   retValue = new float[3];
-   retValue[0] = position.x;
-   retValue[1] = position.y;
-   retValue[2] = position.z;
+   retPosition.x = position.x;
+   retPosition.y = position.y;
+   retPosition.z = position.z;
 
-// GAM CHECK
    // Return the current position of this actor
-   return retValue;
+   return retPosition;
 }
 
 
-void PhysXRigidActor::setRotation(float x, float y, float z, float w)
+void PhysXRigidActor::setRotation(ActorOrientation orient)
 {
    PxTransform   transform;
    PxVec3        position;
@@ -431,32 +429,31 @@ void PhysXRigidActor::setRotation(float x, float y, float z, float w)
    position = rigid_actor->getGlobalPose().p;
 
    // Create a new transform with the updated orientation and original position
-   transform = PxTransform(position, PxQuat(x, y, z, w));
+   transform = PxTransform(position,
+                           PxQuat(orient.x, orient.y, orient.z, orient.w));
 
    // Update the actor to use the new orientation
    rigid_actor->setGlobalPose(transform);
 }
 
 
-float * PhysXRigidActor::getRotation()
+ActorOrientation PhysXRigidActor::getRotation()
 {
-   PxQuat    quaternion;
-   float *   retValue;
+   PxQuat             quaternion;
+   ActorOrientation   retOrientation;
 
    // Acquire the current orienation of this actor
    quaternion = rigid_actor->getGlobalPose().q;
 
    // Store the orientation into a returnable value so that PhysX does not
    // change the values while the information is being used
-   retValue = new float[4];
-   retValue[0] = quaternion.x;
-   retValue[1] = quaternion.y;
-   retValue[2] = quaternion.z;
-   retValue[3] = quaternion.w;
+   retOrientation.x = quaternion.x;
+   retOrientation.y = quaternion.y;
+   retOrientation.z = quaternion.z;
+   retOrientation.w = quaternion.w;
 
-// GAM CHECK
    // Return the current orientation of this actor
-   return retValue;
+   return retOrientation;
 }
 
 

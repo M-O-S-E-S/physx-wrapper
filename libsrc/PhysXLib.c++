@@ -1615,7 +1615,7 @@ PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
 }
 
 
-PHYSX_API void setPosition(unsigned int id, float x, float y, float z)
+PHYSX_API void setPosition(unsigned int id, ActorPosition pos)
 {
    PhysXRigidActor *   rigidActor;
 
@@ -1624,7 +1624,7 @@ PHYSX_API void setPosition(unsigned int id, float x, float y, float z)
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();
-      rigidActor->setPosition(x, y, z);
+      rigidActor->setPosition(pos);
       px_scene->unlockWrite();
    }
    else
@@ -1635,7 +1635,7 @@ PHYSX_API void setPosition(unsigned int id, float x, float y, float z)
 }
 
 
-PHYSX_API float * getPosition(unsigned int id)
+PHYSX_API ActorPosition getPosition(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
 
@@ -1653,12 +1653,13 @@ PHYSX_API float * getPosition(unsigned int id)
       // Let the user know that the actor could not be found
       logger->notify(AT_WARN, "Failed to retrieve actor %u's position. Actor "
          "not found.\n", id);
-      return 0;
+      ActorPosition zero = {0.0, 0.0, 0.0};
+      return zero;
    }
 }
 
 
-PHYSX_API void setRotation(unsigned int id, float x, float y, float z, float w)
+PHYSX_API void setRotation(unsigned int id, ActorOrientation orient)
 {
    PhysXRigidActor *   rigidActor;
 
@@ -1670,7 +1671,7 @@ PHYSX_API void setRotation(unsigned int id, float x, float y, float z, float w)
    {
       // Update the orientation of the actor
       px_scene->lockWrite();
-      rigidActor->setRotation(x, y, z, w);
+      rigidActor->setRotation(orient);
       px_scene->unlockWrite();
    }
    else
@@ -1682,7 +1683,7 @@ PHYSX_API void setRotation(unsigned int id, float x, float y, float z, float w)
 }
 
 
-PHYSX_API float * getRotation(unsigned int id)
+PHYSX_API ActorOrientation getRotation(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
 
@@ -1700,7 +1701,8 @@ PHYSX_API float * getRotation(unsigned int id)
       // Let the user know that the actor could not be found
       logger->notify(AT_WARN, "Failed to retrieve actor %u's rotation. Actor "
          "not found.\n", id);
-      return 0;
+      ActorOrientation zero = {0.0, 0.0, 0.0, 1.0};
+      return zero;
    }
 }
 

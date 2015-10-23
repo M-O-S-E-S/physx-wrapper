@@ -650,44 +650,36 @@ extern "C"
    /// Updates an actors position inside the physical scene.
    ///
    /// @param id The id of the actor to be updated.
-   /// @param x The x value of the new physical translation in the scene.
-   /// @param y The y value of the new physical translation in the scene.
-   /// @param z The z value of the new physical translation in the scene.
+   /// @param pos The position of the new physical translation in the scene.
    ///
-   void   setPosition(unsigned int id, float x, float y, float z);
+   void   setPosition(unsigned int id, ActorPosition pos);
 
    /// Method to fetch the current position of an actor in the physical scene.
    ///
    /// @param id The id of the actor to be fetched.
    ///
-   /// @return An array of floats with the x, y, z values for the position of
+   /// @return A struct of floats with the x, y, z values for the position of
    /// the actor in the physical scene.
    ///
-   float *   getPosition(unsigned int id);
+   ActorPosition   getPosition(unsigned int id);
 
    /// Updates an actors rotation inside the physical scene.
    ///
    /// @param id The id of the actor to be updated.
-   /// @param x The x value of the quaternion representing the new rotation of
-   /// the actor in the physical scene.
-   /// @param y The y value of the quaternion representing the new rotation of
-   /// the actor in the physical scene.
-   /// @param z The z value of the quaternion representing the new rotation of
-   /// the actor in the physical scene.
-   /// @param w The w value of the quaternion representing the new rotation of
+   /// @param orient The quaternion representing the new rotation of
    /// the actor in the physical scene.
    ///
-   void   setRotation(unsigned int id, float x, float y, float z, float w);
+   void   setRotation(unsigned int id, ActorOrientation orient);
 
    /// Method to fetch the current orientation of an actor in the physical
    /// scene.
    ///
    /// @param id The id of the actor to be fetched.
    ///
-   /// @return An array of floats with the x, y, z, w values for the quaternion
+   /// @return A struct of floats with the x, y, z, w values for the quaternion
    /// representing the orientation of the actor in the physical scene.
    ///
-   float *   getRotation(unsigned int id);
+   ActorOrientation   getRotation(unsigned int id);
 
    /// Updates an actor with a new linear velocity.
    ///
