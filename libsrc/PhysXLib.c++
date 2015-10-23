@@ -1545,8 +1545,11 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       material = px_physics->createMaterial(staticFriction, dynamicFriction,
          restitution);
 
-      // Assign the new material to the actor's shape
+      // Assign the new material to the actor's shape and make sure the
+      // operation is thread-safe
+      px_scene->lockWrite();
       shape->setMaterials(&material, 1);
+      px_scene->unlockWrite();
    }
    else
    {
@@ -1561,7 +1564,8 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
 
 PHYSX_API float getActorMass(unsigned int id)
 {
-   PhysXRigidActor * rigidActor;
+   PhysXRigidActor *   rigidActor;
+   float               result;
 
    // Fetch the physx actor by the given id
    rigidActor = getActor(id);
@@ -1570,7 +1574,11 @@ PHYSX_API float getActorMass(unsigned int id)
    // Return the mass
    if (rigidActor != NULL && rigidActor->isDynamic())
    {
-      return rigidActor->getMass();
+      px_scene->lockRead();
+      result = rigidActor->getMass();
+      px_scene->unlockRead();
+
+      return result;
    }
    
    // Otherwise, return 0.0f
@@ -1589,7 +1597,9 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
    // If the actor is not null, apply the force
    if (rigidActor != NULL)
    {
+      px_scene->lockWrite();
       return rigidActor->addForce(force);
+      px_scene->unlockWrite();
    }
    
    return false;
@@ -1609,7 +1619,9 @@ PHYSX_API void addTorque(unsigned int id, float torqueX, float torqueY,
    // If the actor is not null, apply the torque
    if (rigidActor != NULL)
    {
+      px_scene->lockWrite();
       return rigidActor->addTorque(force);
+      px_scene->unlockWrite();
    }
 }
 
@@ -1752,7 +1764,9 @@ PHYSX_API void setAngularVelocity(unsigned int id, float x, float y, float z)
    if (rigidActor != NULL)
    {
       // Update the angular velocity of the actor
+      px_scene->lockWrite();
       rigidActor->setAngularVelocity(x, y, z);
+      px_scene->unlockWrite();
    }
 }
 
@@ -1768,7 +1782,9 @@ PHYSX_API void setGravity(unsigned int id, float x, float y, float z)
    if (rigidActor != NULL)
    {
       // Update the gravity to the new values
+      px_scene->lockWrite();
       rigidActor->setGravity(x, y, z);
+      px_scene->unlockWrite();
    }
    else
    {
@@ -1823,7 +1839,8 @@ PHYSX_API void updateShapeDensity(unsigned int id, unsigned int shapeID,
 
 PHYSX_API bool updateActorMass(unsigned int id, float mass)
 {
-   PhysXRigidActor * rigidActor;
+   PhysXRigidActor *   rigidActor;
+   bool                result;
 
    // Fetch the actor by the given id
    rigidActor = getActor(id);
@@ -1831,7 +1848,9 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
    // Update the mass for the actor if it is dynamic
    if (rigidActor != NULL && rigidActor->isDynamic())
    {
-      return rigidActor->setMass(mass);
+      px_scene->lockWrite();
+      result = rigidActor->setMass(mass);
+      px_scene->unlockWrite();
    }
 
    // If the actor is not dynamic, or is not found, return false
@@ -2010,7 +2029,9 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    actor->addShape(terrainShapeID, newShape, 0.0f);
 
    // Add the newly created actor to the scene
+   px_scene->lockWrite();
    px_scene->addActor(*(actor->getActor()));
+   px_scene->unlockWrite();
 }
 
 
@@ -2061,6 +2082,7 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
       PxQuat(actor2Quat[0], actor2Quat[1], actor2Quat[2], actor2Quat[3]));
 
    // Create a new D6 joint between the given actors
+   px_scene->lockWrite();
    joint = PxD6JointCreate(
       *px_physics, rigidActor1, actor1Frame, rigidActor2, actor2Frame);
 
@@ -2158,6 +2180,9 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
       swingLimits = new PxJointLimitCone(ySwingLimit, zSwingLimit);
       joint->setSwingLimit(*swingLimits);
    }
+
+   // Now that the joint creation is done, unlock writing
+   px_scene->unlockWrite();
 
    // Obtain IDs for both given actors (if they are valid)
    actor1ID = 0;
