@@ -2141,7 +2141,7 @@ PHYSX_API void removeJoint(unsigned int id)
 
    // Remove the given joint from the map
    jointKey = new atInt(id);
-   joint = (PhysXJoint *)joint_map->removeEntry(jointKey);
+   joint = (PhysXJoint *) joint_map->removeEntry(jointKey);
    delete jointKey;
 
    // Clean up the joint if it existed
