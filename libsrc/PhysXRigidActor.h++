@@ -44,6 +44,26 @@ enum ActorType
 };
 
 
+/// Struct to contain actor position.
+///
+struct ActorPosition
+{
+   float   x;
+   float   y;
+   float   z;
+};
+
+/// Struct to contain actor orientation.
+///
+struct ActorOrientation
+{
+   float   x;
+   float   y;
+   float   z;
+   float   w;
+};
+
+
 /// Container class to help with managing the PhysX actors.
 
 class PhysXRigidActor : public atItem
@@ -241,38 +261,30 @@ class PhysXRigidActor : public atItem
 
       /// Changes the position of the actor.
       ///
-      /// @param x The x value of the new position for this actor.
-      /// @param y The y value of the new position for this actor.
-      /// @param z The z value of the new position for this actor.
+      /// @param pos The positin of the actor.
       ///
-      void   setPosition(float x, float y, float z);
+      void   setPosition(ActorPosition pos);
       
       /// Fetch the current position of this actor.
       ///
-      /// @return An array with the current position of the actor. The values
+      /// @return A struct with the current position of the actor. The values
       /// of the array are [x, y, z].
       ///
-      float *   getPosition();
+      ActorPosition   getPosition();
 
       /// Changes the orientation of this actor.
       ///
-      /// @param x The x value of the quaternion that represents the new 
-      /// orientation of this actor.
-      /// @param y The y value of the quaternion that represents the new 
-      /// orientation of this actor.
-      /// @param z The z value of the quaternion that represents the new 
-      /// orientation of this actor.
-      /// @param w The w value of the quaternion that represents the new 
+      /// @param orient The quaternion that represents the new 
       /// orientation of this actor.
       ///
-      void   setRotation(float x, float y, float z, float w);
+      void   setRotation(ActorOrientation orient);
 
       /// Fetch the current orientation of this actor.
       ///
-      /// @return An array with the current quaternion that represents the 
+      /// @return A struct with the current quaternion that represents the 
       /// orientation for this actor. The values of the array are [x, y, z, w].
       ///
-      float *   getRotation();
+      ActorOrientation   getRotation();
 
       /// Changes the linear velocity for this actor.
       ///
