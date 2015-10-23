@@ -26,7 +26,6 @@
 
 #include "PxPhysicsAPI.h"
 
-#include "atInt.h++"
 #include "atItem.h++"
 
 using namespace physx;
@@ -39,16 +38,16 @@ class PhysXJoint : public atItem
    public:
       /// Constructor,
       ///
-      /// @param joint The underlying PhysX joint that will be held by
-      /// object.
       /// @param jointID The unique identifier for the joint.
       /// @param actorID1 The unique identifier for the first actor to
       /// which the joint is attached to.
       /// @param actorID2 The unique identifier for the second actor to
       /// which the joint is attached to.
+      /// @param joint The underlying PhysX joint that will be held by
+      /// object.
       ///
-      PhysXJoint(PxJoint * joint, unsigned int jointID,
-         unsigned int actorID1, unsigned int actorID2);
+      PhysXJoint(unsigned int jointID, unsigned int actorID1, 
+                 unsigned int actorID2, PxJoint * joint);
 
       /// Deconstructor.
       ///
@@ -64,7 +63,7 @@ class PhysXJoint : public atItem
       ///
       /// @return The unique identifier of the joint.
       ///
-      atInt   getID();
+      unsigned int   getID();
 
       /// Updates the unique identifier of the first actor to which
       /// the joint is attached to.
@@ -78,7 +77,7 @@ class PhysXJoint : public atItem
       ///
       /// @return The unique identifier of the first actor.
       ///
-      atInt   getFirstActorID();
+      unsigned int   getFirstActorID();
 
       /// Updates the unique identifier of the second actor to which
       /// the joint is attached to.
@@ -92,7 +91,7 @@ class PhysXJoint : public atItem
       ///
       /// @return The unique identifier of the second actor.
       ///
-      atInt   getSecondActorID();
+      unsigned int   getSecondActorID();
 
       /// Updates the underlying PhysX joint held by this object.
       ///
@@ -109,19 +108,20 @@ class PhysXJoint : public atItem
 
    protected:
       /// The unique identifier of the joint.
-      atInt *   joint_id;
+      unsigned int   joint_id;
 
       /// The unique identifier of the first actor to which the joint
       /// is attached to.
-      atInt *   actor1_id;
+      unsigned int   actor1_id;
 
       /// The unique identifier of the second actor to which the joint
       /// is attached to.
-      atInt *   actor2_id;
+      unsigned int   actor2_id;
 
       /// The underlying PhysX joint being held by this object.
       PxJoint *   px_joint;
 };
+
 
 #endif
 

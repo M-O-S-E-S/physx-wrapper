@@ -30,7 +30,7 @@
 const float PhysXRigidActor::default_density = 1000.0006836f;
 
 
-PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
+PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int actorID,
    float x, float y, float z, ActorType type)
 {
    PxTransform   actorPos;
@@ -57,12 +57,12 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
       rigid_actor = (PxRigidActor *) physics->createRigidStatic(actorPos);
    }
 
-   // Don't assign a name yet 
-   actor_name = NULL;
+   // Assign a blank name for now
+   actor_name = new atString("");
 
    // Store the current identifier that will be used in maps to quickly access
    // this actor
-   actor_id = new atInt(id);
+   actor_id = new atInt(actorID);
 
    // Store the type of actor that was created either static or dynamic
    actor_type = type;
@@ -102,8 +102,8 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
       rigid_actor = (PxRigidActor *) physics->createRigidStatic(actorPos);
    }
 
-   // Don't assign a name yet
-   actor_name = NULL;
+   // Assign a blank name for now
+   actor_name = new atString("");
 
    // Store the current identifier that will be used in maps to quickly access
    // this actor
@@ -141,12 +141,8 @@ PhysXRigidActor::~PhysXRigidActor()
 
 void PhysXRigidActor::setID(unsigned int id)
 {
-   // Remove the old ID if one existed
-   if (actor_id != NULL)
-      delete actor_id;
-
-   // Save the new identifier to an atInt in order to use the atMap
-   actor_id = new atInt(id);
+   // Set new ID value
+   actor_id->setValue(id);
 
    // Assign the ID to the actor's user data, so that this actor can be
    // identified in PhysX callbacks
@@ -154,11 +150,11 @@ void PhysXRigidActor::setID(unsigned int id)
 }
 
 
-atInt * PhysXRigidActor::getID()
+unsigned int PhysXRigidActor::getID()
 {
    // Return the current identifier for this actor which is used as a key for
    // maps
-   return actor_id;
+   return actor_id->getValue();
 }
 
 
@@ -221,7 +217,7 @@ PxShape * PhysXRigidActor::getShape(unsigned int shapeId)
    tempId = new atInt(shapeId);
 
    // Retrieve the shape attached to this actor with the given ID
-   shapeObj = (PhysXShape*) actor_shapes->getValue(tempId);
+   shapeObj = (PhysXShape *) actor_shapes->getValue(tempId);
 
    // Clean up the temporary ID now that the shape has been retrieved
    delete tempId;
@@ -322,22 +318,21 @@ void PhysXRigidActor::detachAllShapes()
 
 void PhysXRigidActor::setName(char * name)
 {
-   // Remove our previous name if one existed
-   if (actor_name != NULL)
-      delete actor_name;
-
-   // Save the new name to our atString field
-   actor_name = new atString(name);
+   // Set the new name
+   if (name != NULL)
+      actor_name->setString(name);
+   else
+      actor_name->setString("");
 
    // Update PhysX actor with the new name
    rigid_actor->setName(actor_name->getString());
 }
 
 
-atString * PhysXRigidActor::getName()
+char * PhysXRigidActor::getName()
 {
    // Return the current name of this actor
-   return actor_name;
+   return actor_name->getString();
 }
 
 
@@ -349,6 +344,7 @@ float PhysXRigidActor::getMass()
       return ((PxRigidDynamic *) rigid_actor)->getMass();  
    }
 
+   // Can't add force to non-dynamic actors
    return 0.0f;
 }
 
@@ -365,7 +361,7 @@ bool PhysXRigidActor::addForce(PxVec3 force)
 }
 
 
-void PhysXRigidActor::setTranslation(float posX, float posY, float posZ,
+void PhysXRigidActor::setTransformation(float posX, float posY, float posZ,
    float rotX, float rotY, float rotZ, float rotW)
 {
    PxVec3        position;
@@ -579,8 +575,9 @@ void PhysXRigidActor::updateDensity()
    PxRigidBodyExt::updateMassAndInertia(*rigidBody, densities,
       shapeList->getNumEntries());
 
-   // Clean up the temporary shape list
+   // Clean up the temporary shape list and densities
    shapeList->removeAllEntries();
    delete shapeList;
+   delete[] densities;
 }
 

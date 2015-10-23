@@ -158,7 +158,7 @@ class PhysXRigidActor : public atItem
       ///
       /// @return The atInt object's get value will be the identifier for this 
       /// object. 
-      atInt *   getID();
+      unsigned int   getID();
 
       /// Method to get the PhysX representation of this actor as a
       /// PxActor instance.
@@ -224,7 +224,7 @@ class PhysXRigidActor : public atItem
       ///
       /// @return The current name of the actor.
       ///
-      atString *       getName();
+      char *           getName();
 
       /// Get the mass for an actor (only valid for dynamic actors).
       ///
@@ -252,8 +252,8 @@ class PhysXRigidActor : public atItem
       /// @param rotW The w value of the quaternion that represents the new 
       /// orientation of this actor.
       ///
-      void   setTranslation(float posX, float posY, float posZ,
-                          float rotX, float rotY, float rotZ, float rotW);
+      void   setTransformation(float posX, float posY, float posZ,
+                               float rotX, float rotY, float rotZ, float rotW);
 
       /// Changes the position of the actor.
       ///

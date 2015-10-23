@@ -24,14 +24,15 @@
 #include "PhysXJoint.h++"
 
 
-PhysXJoint::PhysXJoint(PxJoint * joint, unsigned int jointID,
-   unsigned int actor1ID, unsigned int actor2ID)
+PhysXJoint::PhysXJoint(unsigned int jointID, unsigned int actor1ID, 
+   unsigned int actor2ID, PxJoint * joint)
 {
-   // Initialize members based on the given parameters
+   // Initialize members based on the given parameters (ownership of the
+   // joint it given to this object)
+   joint_id = jointID;
+   actor1_id = actor1ID;
+   actor2_id = actor2ID;
    px_joint = joint;
-   joint_id = new atInt(jointID);
-   actor1_id = new atInt(actor1ID);
-   actor2_id = new atInt(actor2ID);
 }
 
 
@@ -40,72 +41,50 @@ PhysXJoint::~PhysXJoint()
    // Clean up the underlying PhysX joint
    if (px_joint != NULL)
       px_joint->release();
-
-   // Clean up the ID members
-   if (joint_id != NULL)
-      delete joint_id;
-   if (actor1_id != NULL)
-      delete actor1_id;
-   if (actor2_id != NULL)
-      delete actor2_id;
 }
 
 
 void PhysXJoint::setID(unsigned int id)
 {
-   // Delete the current ID, if one already exists
-   if (joint_id != NULL)
-      delete joint_id;
-
-   // Update the unique identifier of the joint
-   joint_id = new atInt(id);
+   // Set the ID to the new value
+   joint_id = id;
 }
 
 
-atInt PhysXJoint::getID()
+unsigned int PhysXJoint::getID()
 {
    // Return the unique identifier of the joint
-   return *joint_id;
+   return joint_id;
 }
 
 
 void PhysXJoint::setFirstActorID(unsigned int id)
 {
-   // Delete the current actor's ID, if it already exists
-   if (actor1_id != NULL)
-      delete actor1_id;
-
-   // Update the unique identifier of the first actor to which the joint
-   // is attached to
-   actor1_id = new atInt(id);
+   // Set the ID to the new value
+   actor1_id = id;
 }
 
 
-atInt PhysXJoint::getFirstActorID()
+unsigned int PhysXJoint::getFirstActorID()
 {
    // Return the unique identifier of the first actor to which the joint
    // is attached to
-   return *actor1_id;
+   return actor1_id;
 }
 
 
 void PhysXJoint::setSecondActorID(unsigned int id)
 {
-   // Delete the current actor's ID, if it already exists
-   if (actor2_id != NULL)
-      delete actor2_id;
-
-   // Update the unique identifier of the second actor to which the joint
-   // is attached to
-   actor2_id = new atInt(id);
+   // Set the ID to the new value
+   actor2_id = id;
 }
 
 
-atInt PhysXJoint::getSecondActorID()
+unsigned int PhysXJoint::getSecondActorID()
 {
    // Return the unique identifier of the second actor to which the joint
    // is attached to
-   return *actor2_id;
+   return actor2_id;
 }
 
 

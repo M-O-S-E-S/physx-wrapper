@@ -89,13 +89,12 @@ void PhysXCollisionCallback::onContact(
    int                     numContacts;
    atInt *                 actor1ID;
    atInt *                 actor2ID;
-   PxContactPairPoint *    contactPoints;
 
-   // TODO: why is the buffer size 64?
    // Initialize the buffer that will hold the contact points of collisions
+   // (we limit this to a fixed maximum for efficiency)
    bufferSize = 64;
-   contactPoints = new PxContactPairPoint[bufferSize];
-
+   PxContactPairPoint   contactPoints[bufferSize];
+   
    // Iterate through each of the contact pairs
    for (int i = 0; i < nbPairs; i++)
    {

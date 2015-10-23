@@ -32,7 +32,6 @@
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
-#include "PhysXAggregate.h++"
 
 
 #ifdef _WIN32
@@ -60,7 +59,6 @@ static bool                              scene_initialized = false;
 
 static int                               max_updates;
 
-static atMap *                           aggregate_map = new atMap();
 static atMap *                           actor_map = new atMap();
 static atMap *                           joint_map = new atMap();
 
@@ -153,11 +151,14 @@ PhysXRigidActor * createRigidActor(unsigned int id,
 
 PhysXRigidActor * getActor(unsigned int id)
 {
+   atInt *             searchID;
    PhysXRigidActor *   rigidActor;
 
    // Find the actor, with the specified ID, in the map, and then
    // return it if found; otherwise, return NULL
-   rigidActor = (PhysXRigidActor *)actor_map->getValue(new atInt(id));
+   searchID = new atInt(id);
+   rigidActor = (PhysXRigidActor *)actor_map->getValue(searchID);
+   delete searchID;
    return rigidActor;
 }
 
@@ -168,7 +169,7 @@ PhysXRigidActor * getActor(atInt * id)
 
    // Find the actor, with the spcified id, in the map, and then
    // return it if found; otherwise, return NULL
-   rigidActor = (PhysXRigidActor *)actor_map->getValue(id);
+   rigidActor = (PhysXRigidActor *) actor_map->getValue(id);
    return rigidActor;
 }
 
@@ -293,12 +294,15 @@ PHYSX_API void release()
    // Close the visual debugger if it's currently running
    if (theConnection)
    {
-        theConnection->release();
+      theConnection->release();
    }
 
    // Shut down the physics entirely
    px_physics->release();
    px_foundation->release();
+
+   // Clean-up callback
+   delete px_collisions;
 }
 
 
@@ -321,133 +325,6 @@ PHYSX_API void initCollisionUpdate(
    {
        px_collisions->setCollisionsArray(collisions_array, maxCollisions);
    }
-}
-
-
-PHYSX_API void createAggregate(unsigned int id)
-{
-   PxAggregate *   aggregate;
-   PhysXAggregate *   physXAggregate;
-   atInt *   tempId;
-
-   // Create and initialize the aggregate id as an atInt
-   tempId = new atInt(id);
-
-   // Try to get the PxAggregate pointer from the aggregate map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
-
-   // If the aggregate returned exists, return the function call
-   // because we cannot have multiple of the same id'd aggregates
-   if (physXAggregate != NULL)
-   {
-      return;
-   }
-
-   // Create a new PxAggregate from our PxPhysics instance
-   // with a limitation of 128 entities per aggregate instance
-   // (Hard limit imposed by the PhysX engine)
-   aggregate = px_physics->createAggregate(128, false);
-
-   // Add the PhysX PxAggregate instance to the scene if the
-   // scene has already been initialized
-   if(scene_initialized == 1)
-   {
-      px_scene->addAggregate(*aggregate);
-   }
-
-   // Create a new container to hold our aggregate instance
-   physXAggregate = new PhysXAggregate(aggregate, id);
-
-   // Add a new entry for the PxAggregate to our aggregate_map
-   aggregate_map->addEntry(new atInt(id), physXAggregate);
-}
-
-
-PHYSX_API void removeAggregate(unsigned int id)
-{
-   PhysXAggregate *   aggregate;
-   atInt *   aggregateId;
-
-   // Create the aggregate id as an atInt for storing
-   // the PhysXAggregate within the atMap
-   aggregateId = new atInt(id);
-
-   // Remove the aggregate from the map
-   aggregate = (PhysXAggregate *) aggregate_map->removeEntry(aggregateId);
-
-   // Clean up the aggregate if it existed
-   if (aggregate != NULL)
-   {
-      // Remove the PxAggregate instance from the scene
-      px_scene->removeAggregate(*aggregate->getAggregate());
-
-      // Release the memory used up by the PhysXAggregate
-      aggregate->release();
-   }
-}
-
-
-PHYSX_API int addToAggregate(unsigned int actorId, unsigned int aggregateId)
-{
-   PhysXAggregate *   physXAggregate;
-   PhysXRigidActor *   physXActor;
-   atInt *   tempId;
-
-   // Initialize the atInt aggregate identifier
-   tempId = new atInt(aggregateId);
-
-   // Try to get the PxAggregate pointer from the aggregate map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
-
-   // Try to get the PxActor pointer from the actor map
-   physXActor = (PhysXRigidActor *) getActor(actorId);
-
-   // If there is no aggregate by the given id, return (0) || (false)
-   if (physXAggregate == NULL)
-   {
-      return 0;
-   }
-
-   // If there is no actor by the given id, return (0) || (false)
-   if (physXActor == NULL)
-   {
-      return 0;
-   }
-
-   // Return the result of adding the actor from the aggregate
-   return (int) physXAggregate->addActor(physXActor);
-}
-
-
-PHYSX_API int removeFromAggregate(unsigned int actorId, unsigned int aggregateId)
-{
-   PhysXAggregate * physXAggregate;
-   PhysXRigidActor * physXActor;
-   atInt *   tempId;
-
-   // Initialize the atInt aggregate identifier
-   tempId = new atInt(aggregateId);
-
-   // Try to get the PxAggregate from the aggregate_map
-   physXAggregate = (PhysXAggregate *) aggregate_map->getValue(tempId);
-
-   // Try to get the PxActor pointer from the actor_map
-   physXActor = (PhysXRigidActor *) getActor(actorId);
-
-   // If there is no aggregate by the given id, return (0) || (false)
-   if (physXAggregate == NULL)
-   {
-      return 0;
-   }
-
-   // If there is no actor by the given id, return (0) || (false)
-   if (physXActor == NULL)
-   {
-      return 0;
-   }
-
-   // Return the result of removing the actor from the aggregate
-   return (int) physXAggregate->removeActor(physXActor);
 }
 
 
@@ -673,6 +550,9 @@ PHYSX_API void createActor(
       logger->notify(AT_WARN, "Failed to create actor! Scene not "
          "initialized.\n");
    }
+
+   // Clean-up
+   delete checkID;
 }
 
 
@@ -696,10 +576,8 @@ PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Create a new atInt that will be used to find the actor with the given ID
-   actorID = new atInt(id);
-
    // Attempt to fetch the actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -735,7 +613,7 @@ PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to attach sphere! Actor not found.\n");
    }
 
-   // Clean up the temporary atInt created to look up the actor
+   // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
 
@@ -761,10 +639,8 @@ PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Create a new atInt that will be used to find the actor with the given ID
-   actorID = new atInt(id);
-
    // Attempt to fetch the actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -800,7 +676,7 @@ PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to attach box! Actor not found.\n");
    }
 
-   // Clean up the temporary atInt created to look up the actor
+   // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
 
@@ -826,10 +702,8 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
       return;
    }
 
-   // Create a new atInt that will be used to find the actor with the given ID
-   actorID = new atInt(id);
-
    // Attempt to fetch the actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -865,7 +739,7 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
       logger->notify(AT_WARN, "Failed to attach capsule! Actor not found.\n");
    }
 
-   // Clean up the temporary atInt created to look up the actor
+   // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
 
@@ -896,10 +770,8 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Create a new atInt that will be used to find the actor with the given ID
-   actorID = new atInt(id);
-
    // Attempt to fetch the actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID and that it is
@@ -964,6 +836,10 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
 
       // Now that the shape has been added, unlock writing on other threads
       px_scene->unlockWrite();
+
+      // Clean-up arrays
+      delete[] vertexArray;
+      delete[] indexArray;
    }
    else if (actor != NULL)
    {
@@ -979,7 +855,7 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
          "found.\n");
    }
 
-   // Clean up the temporary atInt created to look up the actor
+   // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
 
@@ -1075,6 +951,10 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
 
          // Now that the shape has been added, unlock writing on other threads
          px_scene->unlockWrite();
+
+         // Clean-up arrays and other data
+         delete[] vertexArray;
+         delete inputData;
       }
    }
    else
@@ -1103,10 +983,8 @@ PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
       return;
    }
 
-   // Create a new atInt that will be used to find the actor with the given ID
-   actorID = new atInt(id);
-
    // Attempt to fetch the actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -1127,7 +1005,7 @@ PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
       logger->notify(AT_WARN, "Failed to remove shape! Actor not found.\n");
    }
 
-   // Clean up the temporary atInt created to look up the actor
+   // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
 
@@ -1143,7 +1021,7 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
    PxShape *            shape;
    atInt *              checkID;
 
-   // Create a new atInt that will be used to search the map for a duplicate
+   // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1196,7 +1074,7 @@ PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
    PxShape *           shape;
    atInt *             checkID;
 
-   // Create a new atInt that will be used to search the map for a duplicate
+   // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1251,7 +1129,7 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
    PxTransform           relativePose;
    atInt *               checkID;
 
-   // Create a new atInt that will be used to search the map for a duplicate
+   // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1294,6 +1172,9 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
       logger->notify(AT_WARN, "Failed to create actor! Scene has not been "
          "initialized or actor already existed.\n");
    }
+
+   // Clean up the memory used by the id
+   delete checkID;
 }
 
 
@@ -1313,7 +1194,7 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
    PxMeshScale              meshScale;
    atInt *                  checkID;
 
-   // Create a new atInt that will be used to search the map for a duplicate
+   // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1376,6 +1257,10 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
 
       // Finished creating new mesh actor
       px_scene->unlockWrite();
+
+      // Clean-up arrays
+      delete[] vertexArray;
+      delete[] indexArray;
    }
    else
    {
@@ -1383,6 +1268,9 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       logger->notify(AT_WARN, "Unable to create triangle mesh for actor, "
          "because the scene wasn't initialized or actor already existed.\n");
    }
+
+   // Clean up the memory used by the id
+   delete checkID;
 }
 
 
@@ -1403,7 +1291,7 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
    PxDefaultMemoryInputData*     inputData;
    atInt *                       checkID;
 
-   // Create a new atInt that will be used to search the map for a duplicate
+   // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
 
@@ -1464,6 +1352,9 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
 
       // Finished creating new mesh actor
       px_scene->unlockWrite();
+
+      // Clean-up arrays
+      delete[] vertexArray;
    }
    else
    {
@@ -1471,13 +1362,17 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
       logger->notify(AT_WARN, "Unable to create convex mesh due to scene "
          "initialization or actor already exists.\n");
    }
+
+   // Clean up the memory used by the id
+   delete checkID;
 }
 
 
 PHYSX_API void removeActor(unsigned int id)
 {
-   PhysXRigidActor *           rigidActor;
-   PxActor *                   actor;
+   atInt *             searchID;
+   PhysXRigidActor *   rigidActor;
+   PxActor *           actor;
 
    // Can't remove actor if scene has not been initialized yet
    if (scene_initialized == false)
@@ -1487,7 +1382,9 @@ PHYSX_API void removeActor(unsigned int id)
 
    // Try and remove the given actor from the map and check to see
    // if the actor exists
-   rigidActor = (PhysXRigidActor *)actor_map->removeEntry(new atInt(id));
+   searchID = new atInt(id);
+   rigidActor = (PhysXRigidActor *)actor_map->removeEntry(searchID);
+   delete searchID;
    if (rigidActor == NULL)
    {
       // Alert that the given actor name could not be found
@@ -1528,11 +1425,8 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Create a temporary atInt for the ID that will be used to search the
-   // actor map
-   actorID = new atInt(id);
-
    // Attempt to find an actor with the given ID
+   actorID = new atInt(id);
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found
@@ -1596,7 +1490,7 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
 }
 
 
-PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
+PHYSX_API void setTransformation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
 {
    PhysXRigidActor *   rigidActor;
@@ -1609,7 +1503,7 @@ PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();
-      rigidActor->setTranslation(posX, posY, posZ, rotX, rotY, rotZ, rotW);
+      rigidActor->setTransformation(posX, posY, posZ, rotX, rotY, rotZ, rotW);
       px_scene->unlockWrite();
    }
 }
@@ -1996,6 +1890,11 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
 
    // Add the newly created actor to the scene
    px_scene->addActor(*(actor->getActor()));
+
+   // Clean-up
+   delete terrainID;
+   delete heightFieldSampleArray;
+   delete heightFieldGeometry;
 }
 
 
@@ -2009,9 +1908,6 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
    PxRigidActor *              rigidActor1;
    PxRigidActor *              rigidActor2;
    PxD6Joint *                 joint;
-   PxJointLinearLimit *        jointLinearLimit;
-   PxJointAngularLimitPair *   twistLimit;
-   PxJointLimitCone *          swingLimits;
    PxTransform                 actor1Frame;
    PxTransform                 actor2Frame;
    float                       ySwingLimit;
@@ -2079,10 +1975,10 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
          // Limit the linear freedom by the difference in the limits
          // NOTE: In PhysX this causes all linear degrees of freedom to have
          // the same limit
-         jointLinearLimit = new PxJointLinearLimit(
-            px_physics->getTolerancesScale(),
-            linearUpperLimit[i] - linearLowerLimit[i]);
-         joint->setLinearLimit(*jointLinearLimit);
+         PxJointLinearLimit   jointLinearLimit(
+                                 px_physics->getTolerancesScale(),
+                                 linearUpperLimit[i] - linearLowerLimit[i]);
+         joint->setLinearLimit(jointLinearLimit);
       }
    }
 
@@ -2115,9 +2011,10 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
          if (i == 0)
          {
             // If the axis is being limited is the x-axis, use the twist limits
-            twistLimit = new PxJointAngularLimitPair(
-               angularLowerLimit[i], angularUpperLimit[i]);
-            joint->setTwistLimit(*twistLimit);
+            PxJointAngularLimitPair   twistLimit(
+                                         angularLowerLimit[i],
+                                         angularUpperLimit[i]);
+            joint->setTwistLimit(twistLimit);
          }
          else if (i == 1)
          {
@@ -2140,20 +2037,20 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
    if (ySwingLimit > 0.0 || zSwingLimit > 0.0)
    {
       // Create a swing limit to represent limits around both axes
-      swingLimits = new PxJointLimitCone(ySwingLimit, zSwingLimit);
-      joint->setSwingLimit(*swingLimits);
+      PxJointLimitCone   swingLimits(ySwingLimit, zSwingLimit);
+      joint->setSwingLimit(swingLimits);
    }
 
    // Obtain IDs for both given actors (if they are valid)
    actor1ID = 0;
    actor2ID = 0;
    if (actor1 != NULL)
-      actor1ID = actor1->getID()->getValue();
+      actor1ID = actor1->getID();
    if (actor2 != NULL)
-      actor2ID = actor2->getID()->getValue();
+      actor2ID = actor2->getID();
 
    // Create a new container to hold the joint information
-   physXJoint = new PhysXJoint(joint, jointID, actor1ID, actor2ID);
+   physXJoint = new PhysXJoint(jointID, actor1ID, actor2ID, joint);
 
    // Save reference to the new joint
    joint_map->addEntry(new atInt(jointID), physXJoint);
@@ -2167,10 +2064,10 @@ PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
    float * linearUpperLimit, float * angularLowerLimit,
    float * angularUpperLimit)
 {
-   PhysXJoint *                physXJoint;
-   PhysXRigidActor *           actor1;
-   PhysXRigidActor *           actor2;
-   atInt *                     jointKey;
+   PhysXJoint *        physXJoint;
+   PhysXRigidActor *   actor1;
+   PhysXRigidActor *   actor2;
+   atInt *             jointKey;
 
    // Create a key from the joint ID, so that it can be used to search
    // the joint map
@@ -2178,7 +2075,7 @@ PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
 
    // Check whether or not a joint with the given ID already exists;
    // can't have the same IDs for different joints
-   physXJoint = (PhysXJoint *)joint_map->getValue(jointKey);
+   physXJoint = (PhysXJoint *) joint_map->getValue(jointKey);
    if (physXJoint != NULL)
    {
       return;
@@ -2203,10 +2100,10 @@ PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
    float * linearUpperLimit, float * angularLowerLimit,
    float * angularUpperLimit)
 {
-   PhysXJoint *                physXJoint;
-   PhysXRigidActor *           actor1;
-   PhysXRigidActor *           actor2;
-   atInt *                     jointKey;
+   PhysXJoint *        physXJoint;
+   PhysXRigidActor *   actor1;
+   PhysXRigidActor *   actor2;
+   atInt *             jointKey;
 
    // Create a key from the joint ID, so that it can be used to search
    // the joint map
@@ -2214,7 +2111,7 @@ PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
 
    // Check whether or not a joint with the given ID already exists;
    // can't have the same IDs for different joints
-   physXJoint = (PhysXJoint *)joint_map->getValue(jointKey);
+   physXJoint = (PhysXJoint *) joint_map->getValue(jointKey);
    if (physXJoint != NULL)
    {
       return;
@@ -2239,10 +2136,13 @@ PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
 
 PHYSX_API void removeJoint(unsigned int id)
 {
+   atInt *        jointKey;
    PhysXJoint *   joint;
 
    // Remove the given joint from the map
-   joint = (PhysXJoint *)joint_map->removeEntry(new atInt(id));
+   jointKey = new atInt(id);
+   joint = (PhysXJoint *)joint_map->removeEntry(jointKey);
+   delete jointKey;
 
    // Clean up the joint if it existed
    if (joint != NULL)
