@@ -599,6 +599,17 @@ extern "C"
    ///
    float   getActorMass(unsigned int id);
 
+   /// Apply torque to a physical actor.
+   ///
+   /// @param id The unique identifier of the actor to which the torque will
+   /// be applied.
+   /// @param torqueX The x-component of the torque being applied.
+   /// @param torqueY The y-component of the torque being applied.
+   /// @param torqueZ The z-component of the torque being applied.
+   ///
+   void   addTorque(unsigned int id, float torqueX, float torqueY,
+                    float torqueZ);
+
    /// Updates an actors position and orientation inside the physical scene.
    ///
    /// @param id The id of the actor to be updated.

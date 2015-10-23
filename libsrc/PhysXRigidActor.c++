@@ -361,6 +361,17 @@ bool PhysXRigidActor::addForce(PxVec3 force)
 }
 
 
+void PhysXRigidActor::addTorque(PxVec3 torque)
+{
+   // Only dynamic actors should have torque applied
+   if (actor_type == DYNAMIC)
+   {
+      // Cast the actor into a dynamic actor and apply the torque
+      ((PxRigidDynamic *) rigid_actor)->addTorque(torque);
+   }
+}
+
+
 void PhysXRigidActor::setTransformation(float posX, float posY, float posZ,
    float rotX, float rotY, float rotZ, float rotW)
 {
