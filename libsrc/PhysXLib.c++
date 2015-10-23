@@ -1596,6 +1596,24 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
 }
 
 
+PHYSX_API void addTorque(unsigned int id, float torqueX, float torqueY,
+   float torqueZ)
+{
+   PxVec3              force;
+   PhysXRigidActor *   rigidActor;
+
+   // Create the torque vector and get the actor
+   force = PxVec3(torqueX, torqueY, torqueZ);
+   rigidActor = getActor(id);
+
+   // If the actor is not null, apply the torque
+   if (rigidActor != NULL)
+   {
+      return rigidActor->addTorque(force);
+   }
+}
+
+
 PHYSX_API void setTranslation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
 {
