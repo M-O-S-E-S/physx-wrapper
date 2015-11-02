@@ -26,6 +26,7 @@
 
 #include "atMap.h++"
 #include "atNotifier.h++"
+#include "atTimer.h++"
 
 #include "cuda.h"
 
@@ -2205,14 +2206,39 @@ PHYSX_API void simulate(float time,
    PxVec3                      velocity;
    PxVec3                      angularVelocity;
 
+   // Create the profiling timer that will keep track of how long the
+   // different parts of the simulation took
+   #ifdef DEBUG
+      atTimer *   profilingTimer;
+      profilingTimer = new atTimer();
+   #endif
+
    px_scene->lockRead();
 
    // Advance the world forward in time
    px_scene->simulate(time);
 
+   // Mark and record how long it took for the simulate call to finish, then
+   // remark the timer for the next profile
+   #ifdef DEBUG
+      profilingTimer->mark();
+      logger->notify(AT_INFO, "PhysX simulate time = %fMS\n", 
+         profilingTimer->getInterval() * 1000.0f);
+      profilingTimer->mark();
+   #endif
+
    // Allow the simulation to finish and indicate that it should
    // wait until it is completed
    px_scene->fetchResults(true);
+   
+   // Mark and record how long it took for the fetch results call to finish, 
+   // then remark the timer for the next profile
+   #ifdef DEBUG
+      profilingTimer->mark();
+      logger->notify(AT_INFO, "PhysX fetch results time = %fMS\n", 
+         profilingTimer->getInterval() * 1000.0f);
+      profilingTimer->mark();
+   #endif
 
    // Retrieve the array of actors that have been active since
    // the last simulation step
@@ -2262,7 +2288,7 @@ PHYSX_API void simulate(float time,
          update_array[i].ID = actorID->getValue();
       else
          update_array[i].ID = 0;
-   }
+   }  
 
    // Update the number of active transforms and collisions,
    // in this step, by reference
@@ -2274,8 +2300,27 @@ PHYSX_API void simulate(float time,
    {
       *updatedEntityCount = max_updates;
    }
+   
+   // Mark and record how long it took for the update array to be filled, then
+   // remark the timer for the next profile
+   #ifdef DEBUG
+      profilingTimer->mark();
+      logger->notify(AT_INFO, "Update array finished time = %fMS\n",
+         profilingTimer->getInterval() * 1000.0f);
+      profilingTimer->mark();
+   #endif
+
    px_collisions->getCollisions(updatedCollisionCount);
 
+   // Mark and record how long it took for the getCollisions call to finish, 
+   // then clean up the timer so no memory is leaked
+   #ifdef DEBUG
+      profilingTimer->mark();
+      logger->notify(AT_INFO, "Get collisions time = %fMS\n",
+         profilingTimer->getInterval() * 1000.0f);
+      delete profilingTimer;
+   #endif
+   
    px_scene->unlockRead();
 }
 
