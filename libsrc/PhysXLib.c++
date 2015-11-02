@@ -26,7 +26,10 @@
 
 #include "atMap.h++"
 #include "atNotifier.h++"
-#include "atTimer.h++"
+
+#ifdef DEBUG
+   #include "atTimer.h++"
+#endif
 
 #include "cuda.h"
 
