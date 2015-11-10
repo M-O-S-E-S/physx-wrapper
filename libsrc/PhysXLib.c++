@@ -1481,22 +1481,28 @@ PHYSX_API float getActorMass(unsigned int id)
 
 PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float forceZ)
 {
-   PxVec3 force;
+   PxVec3            force;
    PhysXRigidActor * rigidActor;
+   bool              result;
+
+   // We assume the result is false, until otherwise
+   result = false;
 
    // Create the force vector and get the actor
    force = PxVec3(forceX, forceY, forceZ);
    rigidActor = getActor(id);
 
-   // If the actor is not null, apply the force
+   // If the actor is not null, apply the force, and
+   // set the returned boolean as the result
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();
-      return rigidActor->addForce(force);
+      result = rigidActor->addForce(force);
       px_scene->unlockWrite();
    }
    
-   return false;
+   // Finally, return the result of adding the force
+   return result;
 }
 
 
@@ -1505,18 +1511,26 @@ PHYSX_API void addTorque(unsigned int id, float torqueX, float torqueY,
 {
    PxVec3              force;
    PhysXRigidActor *   rigidActor;
+   bool                result;
+
+   // We assume the result is false, until otherwise
+   result = false;
 
    // Create the torque vector and get the actor
    force = PxVec3(torqueX, torqueY, torqueZ);
    rigidActor = getActor(id);
 
-   // If the actor is not null, apply the torque
+   // If the actor is not null, apply the torque, and
+   // set the returned boolean as the result
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();
-      return rigidActor->addTorque(force);
+      result = rigidActor->addTorque(force);
       px_scene->unlockWrite();
    }
+
+   // Finally, return the result of adding the torque
+   return result;
 }
 
 
