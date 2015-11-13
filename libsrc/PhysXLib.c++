@@ -93,6 +93,9 @@ struct EntityProperties
 static EntityProperties * update_array;
 static CollisionProperties * collisions_array;
 
+#ifdef DEBUG
+   static atTimer * profilingTimer = NULL;
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -295,6 +298,15 @@ PHYSX_API int initialize()
 
 PHYSX_API void release()
 {
+   // Clean up the memory that was used
+   delete actor_map;
+   delete joint_map;
+
+   // Clean up the timer for profiling if it was initialized
+   #ifdef DEBUG
+      delete profilingTimer;
+   #endif
+
    // Close the visual debugger if it's currently running
    if (theConnection)
    {
@@ -2209,11 +2221,15 @@ PHYSX_API void simulate(float time,
    PxVec3                      velocity;
    PxVec3                      angularVelocity;
 
-   // Create the profiling timer that will keep track of how long the
-   // different parts of the simulation took
+   // Mark the start time of the simulate call to get an accurate measurement
+   // of how long the simulate call takes to run
    #ifdef DEBUG
-      atTimer *   profilingTimer;
-      profilingTimer = new atTimer();
+      if (profilingTimer == NULL)
+      {
+         profilingTimer = new atTimer();
+      }
+
+      profilingTimer->mark();
    #endif
 
    px_scene->lockRead();
@@ -2321,7 +2337,6 @@ PHYSX_API void simulate(float time,
       profilingTimer->mark();
       logger->notify(AT_INFO, "Get collisions time = %fMS\n",
          profilingTimer->getInterval() * 1000.0f);
-      delete profilingTimer;
    #endif
    
    px_scene->unlockRead();
