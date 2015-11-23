@@ -240,7 +240,7 @@ class PhysXRigidActor : public atItem
 
       /// Applies a torque ot the actor.
       ///
-      void   addTorque(PxVec3 torque);
+      bool   addTorque(PxVec3 torque);
 
       /// Changes the position and orientation of the actor.
       ///

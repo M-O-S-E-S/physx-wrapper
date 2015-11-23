@@ -248,8 +248,12 @@ void PhysXRigidActor::setShapeDensity(unsigned int shapeId, float density)
    // Retrieve the shape attached to this actor with the given ID
    shapeObj = (PhysXShape *) actor_shapes->getValue(tempId);
 
-   // Modify the density of the shape with the given value
-   shapeObj->setDensity(density);
+   // Check to see if a shape with the given ID was found
+   if (shapeObj != NULL)
+   {
+      // Modify the density of the shape with the given value
+      shapeObj->setDensity(density);
+   }
 
    // Re-calculate the density of the actor
    updateDensity();
@@ -361,13 +365,19 @@ bool PhysXRigidActor::addForce(PxVec3 force)
 }
 
 
-void PhysXRigidActor::addTorque(PxVec3 torque)
+bool PhysXRigidActor::addTorque(PxVec3 torque)
 {
    // Only dynamic actors should have torque applied
    if (actor_type == DYNAMIC)
    {
       // Cast the actor into a dynamic actor and apply the torque
       ((PxRigidDynamic *) rigid_actor)->addTorque(torque);
+      return true;
+   }
+   else
+   {
+      // This is not a dynamic actor, so torque cannot be applied
+      return false;
    }
 }
 
