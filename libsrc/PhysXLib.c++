@@ -27,7 +27,7 @@
 #include "atMap.h++"
 #include "atNotifier.h++"
 
-#ifdef DEBUG
+#ifdef LIB_PHYSX_DEBUG
    #include "atTimer.h++"
 #endif
 
@@ -93,7 +93,7 @@ struct EntityProperties
 static EntityProperties * update_array;
 static CollisionProperties * collisions_array;
 
-#ifdef DEBUG
+#ifdef LIB_PHYSX_DEBUG
    static atTimer * profiling_timer = new atTimer();
 #endif
 
@@ -303,7 +303,7 @@ PHYSX_API void release()
    delete joint_map;
 
    // Clean up the timer for profiling if it was initialized
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       delete profiling_timer;
    #endif
 
@@ -2238,7 +2238,7 @@ PHYSX_API void simulate(float time,
 
    // Mark the start time of the simulate call to get an accurate measurement
    // of how long the simulate call takes to run
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       profiling_timer->mark();
    #endif
 
@@ -2249,7 +2249,7 @@ PHYSX_API void simulate(float time,
 
    // Mark and record how long it took for the simulate call to finish, then
    // remark the timer for the next profile
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       profiling_timer->mark();
       logger->notify(AT_INFO, "PhysX simulate time = %fMS\n", 
          profiling_timer->getInterval() * 1000.0f);
@@ -2262,7 +2262,7 @@ PHYSX_API void simulate(float time,
    
    // Mark and record how long it took for the fetch results call to finish, 
    // then remark the timer for the next profile
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       profiling_timer->mark();
       logger->notify(AT_INFO, "PhysX fetch results time = %fMS\n", 
          profiling_timer->getInterval() * 1000.0f);
@@ -2332,7 +2332,7 @@ PHYSX_API void simulate(float time,
    
    // Mark and record how long it took for the update array to be filled, then
    // remark the timer for the next profile
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       profiling_timer->mark();
       logger->notify(AT_INFO, "Update array finished time = %fMS\n",
          profiling_timer->getInterval() * 1000.0f);
@@ -2343,7 +2343,7 @@ PHYSX_API void simulate(float time,
 
    // Mark and record how long it took for the getCollisions call to finish, 
    // then clean up the timer so no memory is leaked
-   #ifdef DEBUG
+   #ifdef LIB_PHYSX_DEBUG
       profiling_timer->mark();
       logger->notify(AT_INFO, "Get collisions time = %fMS\n",
          profiling_timer->getInterval() * 1000.0f);

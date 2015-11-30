@@ -106,7 +106,7 @@ basisEnv = Environment()
 
 # Set-up defines
 if int(debug):
-   defines = Split('DEBUG');
+   defines = Split('LIB_PHYSX_DEBUG');
 else:
    defines = Split('');
 
