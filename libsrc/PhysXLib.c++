@@ -1588,6 +1588,7 @@ PHYSX_API void setPosition(unsigned int id, ActorPosition pos)
 PHYSX_API ActorPosition getPosition(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
+   ActorPosition       result;
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1595,8 +1596,11 @@ PHYSX_API ActorPosition getPosition(unsigned int id)
    // Make sure the actor was found
    if (rigidActor != NULL)
    {
-      // Return the current position of this actor
-      return rigidActor->getPosition();
+      // Return the current position of this actor in a thread-safe manner
+      px_scene->lockRead();
+      result = rigidActor->getPosition();
+      px_scene->unlockRead();
+      return result;
    }
    else
    {
@@ -1636,6 +1640,7 @@ PHYSX_API void setRotation(unsigned int id, ActorOrientation orient)
 PHYSX_API ActorOrientation getRotation(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
+   ActorOrientation    result;
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1643,8 +1648,11 @@ PHYSX_API ActorOrientation getRotation(unsigned int id)
    // Make sure the actor was found
    if (rigidActor != NULL)
    {
-      // Return the current orientation of the actor
-      return rigidActor->getRotation();
+      // Return the current orientation of the actor in a thread-safe manner
+      px_scene->lockRead();
+      result = rigidActor->getRotation();
+      px_scene->unlockRead();
+      return result;
    }
    else
    {
@@ -2123,7 +2131,7 @@ void constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
 
    // Save reference to the new joint
    joint_map->addEntry(new atInt(jointID), physXJoint);
-} 
+}
 
 
 PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
@@ -2213,9 +2221,14 @@ PHYSX_API void removeJoint(unsigned int id)
    joint = (PhysXJoint *) joint_map->removeEntry(jointKey);
    delete jointKey;
 
-   // Clean up the joint if it existed
+   // Clean up the joint if it existed in a thread-safe manner
+   px_scene->lockWrite();
    if (joint != NULL)
+   {
+      // Clean up the joint
       delete joint;
+   }
+   px_scene->unlockWrite();
 }
 
 
@@ -2231,7 +2244,8 @@ PHYSX_API void simulate(float time,
    PxVec3                      velocity;
    PxVec3                      angularVelocity;
 
-   px_scene->lockRead();
+   // Ensure that the following operations are thread-safe
+   px_scene->lockWrite();
 
    // Advance the world forward in time
    px_scene->simulate(time);
@@ -2302,6 +2316,8 @@ PHYSX_API void simulate(float time,
    }
    px_collisions->getCollisions(updatedCollisionCount);
 
-   px_scene->unlockRead();
+   // Release the write lock acquired earlier in this method, now that the
+   // operation are complete
+   px_scene->unlockWrite();
 }
 
