@@ -932,6 +932,7 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
       meshDesc.points.stride = sizeof(PxVec3);
       meshDesc.points.data = vertexArray;
       meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+      meshDesc.flags |= PxConvexFlag::eINFLATE_CONVEX;
       meshDesc.vertexLimit = 256;
 
       // Attempt to 'cook' the mesh data into a form which allows PhysX to
@@ -1340,6 +1341,7 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
       meshDesc.points.stride = sizeof(PxVec3);
       meshDesc.points.data = vertexArray;
       meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+      meshDesc.flags |= PxConvexFlag::eINFLATE_CONVEX;
       meshDesc.vertexLimit = 256;
 
       // Attempt to 'cook' the mesh data into a form which allows PhysX to
@@ -1451,15 +1453,25 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       // Retrieve the shape with the given ID attached to the actor
       shape = actor->getShape(shapeId);
 
-      // Create a new material given the new parameters
-      material = px_physics->createMaterial(staticFriction, dynamicFriction,
-         restitution);
-
-      // Assign the new material to the actor's shape and make sure the
-      // operation is thread-safe
-      px_scene->lockWrite();
-      shape->setMaterials(&material, 1);
-      px_scene->unlockWrite();
+      // Check to see if the shape was found
+      if (shape != NULL)
+      {
+         // Create a new material given the new parameters
+         material = px_physics->createMaterial(staticFriction, dynamicFriction,
+            restitution);
+ 
+         // Assign the new material to the actor's shape and make sure the
+         // operation is thread-safe
+         px_scene->lockWrite();
+         shape->setMaterials(&material, 1);
+         px_scene->unlockWrite();
+      }
+      else
+      {
+         // Notify the user that a shape with the given ID was not found
+         logger->notify(AT_WARN, "Failed to update material. Shape not "
+            "found.\n");
+      }
    }
    else
    {
