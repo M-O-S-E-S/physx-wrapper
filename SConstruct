@@ -105,7 +105,10 @@ def embedManifest(environment, target, suffix):
 basisEnv = Environment()
 
 # Set-up defines
-defines = Split('');
+if int(debug):
+   defines = Split('LIB_PHYSX_DEBUG');
+else:
+   defines = Split('');
 
 # Then handle platform-specific issues
 if buildTarget == 'win32.32bit':

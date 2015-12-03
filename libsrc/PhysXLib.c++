@@ -27,6 +27,10 @@
 #include "atMap.h++"
 #include "atNotifier.h++"
 
+#ifdef LIB_PHYSX_DEBUG
+   #include "atTimer.h++"
+#endif
+
 #include "cuda.h"
 
 #include "PhysXCollisionCallback.h++"
@@ -89,6 +93,9 @@ struct EntityProperties
 static EntityProperties * update_array;
 static CollisionProperties * collisions_array;
 
+#ifdef LIB_PHYSX_DEBUG
+   static atTimer * profiling_timer = new atTimer();
+#endif
 
 //-----------------------------------------------------------------------------
 
@@ -291,6 +298,15 @@ PHYSX_API int initialize()
 
 PHYSX_API void release()
 {
+   // Clean up the memory that was used
+   delete actor_map;
+   delete joint_map;
+
+   // Clean up the timer for profiling if it was initialized
+   #ifdef LIB_PHYSX_DEBUG
+      delete profiling_timer;
+   #endif
+
    // Close the visual debugger if it's currently running
    if (theConnection)
    {
@@ -1537,7 +1553,8 @@ PHYSX_API bool addTorque(unsigned int id, float torqueX, float torqueY,
    if (rigidActor != NULL)
    {
       px_scene->lockWrite();
-      result = rigidActor->addTorque(force);
+      rigidActor->addTorque(force);
+      result = true;
       px_scene->unlockWrite();
    }
 
@@ -2247,12 +2264,36 @@ PHYSX_API void simulate(float time,
    // Ensure that the following operations are thread-safe
    px_scene->lockWrite();
 
+   // Mark the start time of the simulate call to get an accurate measurement
+   // of how long the simulate call takes to run
+   #ifdef LIB_PHYSX_DEBUG
+      profiling_timer->mark();
+   #endif
+
    // Advance the world forward in time
    px_scene->simulate(time);
+
+   // Mark and record how long it took for the simulate call to finish, then
+   // remark the timer for the next profile
+   #ifdef LIB_PHYSX_DEBUG
+      profiling_timer->mark();
+      logger->notify(AT_INFO, "PhysX simulate time = %fMS\n", 
+         profiling_timer->getInterval() * 1000.0f);
+      profiling_timer->mark();
+   #endif
 
    // Allow the simulation to finish and indicate that it should
    // wait until it is completed
    px_scene->fetchResults(true);
+   
+   // Mark and record how long it took for the fetch results call to finish, 
+   // then remark the timer for the next profile
+   #ifdef LIB_PHYSX_DEBUG
+      profiling_timer->mark();
+      logger->notify(AT_INFO, "PhysX fetch results time = %fMS\n", 
+         profiling_timer->getInterval() * 1000.0f);
+      profiling_timer->mark();
+   #endif
 
    // Retrieve the array of actors that have been active since
    // the last simulation step
@@ -2302,7 +2343,7 @@ PHYSX_API void simulate(float time,
          update_array[i].ID = actorID->getValue();
       else
          update_array[i].ID = 0;
-   }
+   }  
 
    // Update the number of active transforms and collisions,
    // in this step, by reference
@@ -2314,10 +2355,28 @@ PHYSX_API void simulate(float time,
    {
       *updatedEntityCount = max_updates;
    }
+   
+   // Mark and record how long it took for the update array to be filled, then
+   // remark the timer for the next profile
+   #ifdef LIB_PHYSX_DEBUG
+      profiling_timer->mark();
+      logger->notify(AT_INFO, "Update array finished time = %fMS\n",
+         profiling_timer->getInterval() * 1000.0f);
+      profiling_timer->mark();
+   #endif
+
    px_collisions->getCollisions(updatedCollisionCount);
 
    // Release the write lock acquired earlier in this method, now that the
    // operation are complete
    px_scene->unlockWrite();
+
+   // Mark and record how long it took for the getCollisions call to finish, 
+   // then clean up the timer so no memory is leaked
+   #ifdef LIB_PHYSX_DEBUG
+      profiling_timer->mark();
+      logger->notify(AT_INFO, "Get collisions time = %fMS\n",
+         profiling_timer->getInterval() * 1000.0f);
+   #endif
 }
 
