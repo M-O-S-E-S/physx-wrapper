@@ -65,6 +65,9 @@ PhysXShape::~PhysXShape()
       // Release this container's reference to the PhysX shape
       physx_shape->release();
    }
+
+   // Clean up the unique identifier of this shape
+   delete shape_id;
 }
 
 
