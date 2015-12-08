@@ -762,7 +762,7 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
 
 PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
    float staticFriction, float dynamicFriction, float restitution,
-   float * vertices, float * indices, int vertexCount, int indexCount, float x,
+   float * vertices, int * indices, int vertexCount, int indexCount, float x,
    float y, float z, float rotX, float rotY, float rotZ, float rotW)
 {
    PhysXRigidActor *        actor;
@@ -836,6 +836,16 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
 
       // Create the shape based on the given geometry and material
       shape = px_physics->createShape(geometry, *material, true);
+
+      // Check to see if a valid shape was constructed
+      if (shape == NULL)
+      {
+         // Clean up and exit, as the shape cannot be attached
+         delete actorID;
+         delete[] vertexArray;
+         delete[] indexArray;
+         return;
+      }
 
       // Set the position and orientation of the mesh relative to the actor
       // using the given parameters
