@@ -622,6 +622,9 @@ PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
 
       // Now that the shape has been added, unlock writing on other threads
       px_scene->unlockWrite();
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -685,6 +688,9 @@ PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
 
       // Now that the shape has been added, unlock writing on other threads
       px_scene->unlockWrite();
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -748,6 +754,9 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
 
       // Now that the shape has been added, unlock writing on other threads
       px_scene->unlockWrite();
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -856,6 +865,9 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       // Clean-up arrays
       delete[] vertexArray;
       delete[] indexArray;
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else if (actor != NULL)
    {
@@ -973,6 +985,9 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
          delete[] vertexArray;
          delete inputData;
       }
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1067,6 +1082,9 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
       px_scene->addActor(*(actor->getActor()));
 
       px_scene->unlockWrite();
+      
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1120,6 +1138,9 @@ PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
       px_scene->addActor(*(actor->getActor()));
 
       px_scene->unlockWrite();
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1182,6 +1203,9 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
       px_scene->addActor(*(actor->getActor()));
 
       px_scene->unlockWrite();
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1278,6 +1302,9 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       // Clean-up arrays
       delete[] vertexArray;
       delete[] indexArray;
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1373,6 +1400,9 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
 
       // Clean-up arrays
       delete[] vertexArray;
+
+      // Clean up the memory used by the material
+      material->release();
    }
    else
    {
@@ -1830,6 +1860,9 @@ PHYSX_API void createGroundPlane(float x, float y, float z)
    px_scene->lockWrite();
    px_scene->addActor(*ground_plane);
    px_scene->unlockWrite();
+
+   // Clean up the memory used by the material
+   material->release();
 }
 
 
@@ -1985,6 +2018,9 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    delete terrainID;
    delete heightFieldSampleArray;
    delete heightFieldGeometry;
+
+   // Clean up the memory used by the material
+   physxMaterial->release();
 }
 
 

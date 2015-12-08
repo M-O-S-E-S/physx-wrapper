@@ -210,7 +210,6 @@ PxShape * PhysXRigidActor::getShape(unsigned int shapeId)
 {
    atInt *        tempId;
    PhysXShape *   shapeObj;
-   PxShape *      result;
 
    // Convert the given ID into an atInt, so that it can be used to check the
    // map
