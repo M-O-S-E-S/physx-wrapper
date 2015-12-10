@@ -833,9 +833,31 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       meshDesc.triangles.stride = sizeof(PxU32) * 3;
       meshDesc.triangles.data = indexArray;
 
+      // Check to see if the mesh drescription forms a valid mesh
+      if (!px_cooking->validateTriangleMesh(meshDesc))
+      {
+         // Warn the user, clean up and exit, because the method cannot
+         // proceed with malformed mesh data
+         logger->notify(AT_WARN, "Invalid triangle mesh data\n");
+         delete actorID;
+         delete[] vertexArray;
+         delete[] indexArray;
+         return;
+      }
+
       // Create the triangle mesh using the cooking library
       triangleMesh = px_cooking->createTriangleMesh(
          meshDesc, px_physics->getPhysicsInsertionCallback());
+
+      // Check to see if the newly-created mesh is not valid
+      if (triangleMesh == NULL)
+      {
+         logger->notify(AT_WARN, "Unable to create triangle mesh\n");
+         delete actorID;
+         delete[] vertexArray;
+         delete[] indexArray;
+         return;
+      }
 
       // Create the geometry for the mesh
       meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
