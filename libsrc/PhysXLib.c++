@@ -833,7 +833,7 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       meshDesc.triangles.stride = sizeof(PxU32) * 3;
       meshDesc.triangles.data = indexArray;
 
-      // Check to see if the mesh drescription forms a valid mesh
+      // Check to see if the mesh description forms a valid mesh
       if (!px_cooking->validateTriangleMesh(meshDesc))
       {
          // Warn the user, clean up and exit, because the method cannot
