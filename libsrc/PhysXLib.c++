@@ -256,6 +256,9 @@ PHYSX_API int initialize()
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
+#ifndef LIB_PHYSX_DEBUG
+   logger->setLogLevel(AT_ERROR);
+#endif
    
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
