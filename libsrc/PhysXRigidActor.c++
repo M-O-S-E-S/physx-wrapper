@@ -24,6 +24,8 @@
 #include "PhysXRigidActor.h++"
 #include "PhysXShape.h++"
 
+#include "pthread.h"
+
 
 // Initialize the default density that will be used in case a supplied density
 // is invalid
@@ -37,6 +39,12 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int actorID,
 
    // Set the name of the class for the user notification messages
    atNotifier::setName("[PhysXRigidActor] ");
+
+   // Initialize the actor mutex
+   pthread_mutex_init(&actor_mutex, NULL);
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z));
@@ -72,6 +80,9 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int actorID,
 
    // Create the map that will hold the various shapes attached to this actor
    actor_shapes = new atMap();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
@@ -82,6 +93,12 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
 
    // Set the name of the class for the user notification messages
    setName("[PhysXRigidActor] ");
+
+   // Initialize the actor mutex
+   pthread_mutex_init(&actor_mutex, NULL);
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Create the position transform for this actor
    actorPos = PxTransform(PxVec3(x, y, z), rot);
@@ -117,11 +134,17 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
 
    // Create the map that will hold the various shapes attached to this actor
    actor_shapes = new atMap();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 PhysXRigidActor::~PhysXRigidActor()
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Clean up the map containing the shape attached to this actor
    delete actor_shapes;
 
@@ -136,39 +159,81 @@ PhysXRigidActor::~PhysXRigidActor()
    // Remove the actor name
    if (actor_name != NULL)
       delete actor_name;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 void PhysXRigidActor::setID(unsigned int id)
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Set new ID value
    actor_id->setValue(id);
 
    // Assign the ID to the actor's user data, so that this actor can be
    // identified in PhysX callbacks
    rigid_actor->userData = actor_id;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 unsigned int PhysXRigidActor::getID()
 {
+   unsigned int   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Return the current identifier for this actor which is used as a key for
    // maps
-   return actor_id->getValue();
+   result = actor_id->getValue();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return the ID
+   return result;
 }
 
 
 PxActor * PhysXRigidActor::getActor()
 {
+   PxActor *   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Return the current PhysX actor
-   return ((PxActor *)rigid_actor);
+   result = ((PxActor *)rigid_actor);
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return the PhysX actor
+   return result;
 }
 
 
 PxRigidActor * PhysXRigidActor::getRigidActor()
 {
+   PxRigidActor *   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Return the current PhysX rigid actor
-   return rigid_actor;
+   result = rigid_actor;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return the PhysX actor
+   return result;
 }
 
 
@@ -177,6 +242,9 @@ void PhysXRigidActor::addShape(unsigned int shapeId, PxShape * shape,
 {
    atInt *        tempId;
    PhysXShape *   newShape;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Convert the given shape ID into an atInt, so that it can be used with
    // the shape map
@@ -189,20 +257,28 @@ void PhysXRigidActor::addShape(unsigned int shapeId, PxShape * shape,
       notify(AT_WARN, "Failed to attach shape! Actor already contains shape "
          "with given ID (%u).\n", shapeId);
       delete tempId;
-      return;
+   }
+   else
+   {
+      // Create a new shape container to hold the information for the shape
+      newShape = new PhysXShape(new atInt(shapeId), shape, density);
+ 
+      // Create an entry for the new shape in the shape map
+      actor_shapes->addEntry(tempId, newShape);
+ 
+      // Attach the new shape to the PhysX actor
+      rigid_actor->attachShape(*shape);
+ 
+      // Now that a new shape has been attached, the densities have to
+      // be updated
+      updateDensity();
    }
 
-   // Create a new shape container to hold the information for the shape
-   newShape = new PhysXShape(new atInt(shapeId), shape, density);
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 
-   // Create an entry for the new shape in the shape map
-   actor_shapes->addEntry(tempId, newShape);
-
-   // Attach the new shape to the PhysX actor
-   rigid_actor->attachShape(*shape);
-
-   // Now that a new shape has been attached, the densities have to be updated
-   updateDensity();
+   // Clean up and exit
+   return;
 }
 
 
@@ -210,10 +286,14 @@ PxShape * PhysXRigidActor::getShape(unsigned int shapeId)
 {
    atInt *        tempId;
    PhysXShape *   shapeObj;
+   PxShape *      result;
 
    // Convert the given ID into an atInt, so that it can be used to check the
    // map
    tempId = new atInt(shapeId);
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Retrieve the shape attached to this actor with the given ID
    shapeObj = (PhysXShape *) actor_shapes->getValue(tempId);
@@ -225,13 +305,19 @@ PxShape * PhysXRigidActor::getShape(unsigned int shapeId)
    if (shapeObj != NULL)
    {
       // Return the PhysX shape associated by the shape container
-      return shapeObj->getShape();
+      result = shapeObj->getShape();
    }
    else
    {
       // The shape container was not found, so return NULL
-      return NULL;
+      result = NULL;
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return the result from the operations above
+   return result;
 }
 
 
@@ -243,6 +329,9 @@ void PhysXRigidActor::setShapeDensity(unsigned int shapeId, float density)
    // Convert the given ID into an atInt, so that it can be used to check
    // the map
    tempId = new atInt(shapeId);
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Retrieve the shape attached to this actor with the given ID
    shapeObj = (PhysXShape *) actor_shapes->getValue(tempId);
@@ -256,6 +345,9 @@ void PhysXRigidActor::setShapeDensity(unsigned int shapeId, float density)
 
    // Re-calculate the density of the actor
    updateDensity();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 
    // Clean up the temporary ID now that the density has been updated
    delete tempId;
@@ -271,6 +363,9 @@ void PhysXRigidActor::detachShape(unsigned int shapeId)
    // the shape map
    tempId = new atInt(shapeId);
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Attempt to remove a shape from the shape map with the given ID
    shape = (PhysXShape *) actor_shapes->removeEntry(tempId);
 
@@ -284,6 +379,12 @@ void PhysXRigidActor::detachShape(unsigned int shapeId)
       delete shape;
    }
 
+   // Now that the shape has been detached, the densities have to be updated
+   updateDensity();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
    // Clean up the temporary ID now that the operations are complete
    delete tempId;
 }
@@ -294,6 +395,9 @@ void PhysXRigidActor::detachAllShapes()
    atList *       shapeIds;
    atList *       shapes;
    PhysXShape *   currShape;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
 
    // Retrieve all the shapes that are attached to this actor
    shapeIds = new atList();
@@ -316,11 +420,17 @@ void PhysXRigidActor::detachAllShapes()
    actor_shapes->clear();
    delete shapeIds;
    delete shapes;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 void PhysXRigidActor::setName(char * name)
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Set the new name
    if (name != NULL)
       actor_name->setString(name);
@@ -329,55 +439,104 @@ void PhysXRigidActor::setName(char * name)
 
    // Update PhysX actor with the new name
    rigid_actor->setName(actor_name->getString());
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 char * PhysXRigidActor::getName()
 {
+   char *   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Return the current name of this actor
-   return actor_name->getString();
+   result = actor_name->getString();
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 float PhysXRigidActor::getMass()
 {
+   float   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Only dynamic actors can have a mass
    if (actor_type == DYNAMIC)
    {  
-      return ((PxRigidDynamic *) rigid_actor)->getMass();  
+      result = ((PxRigidDynamic *) rigid_actor)->getMass();  
+   }
+   else
+   {
+      // Can't add force to non-dynamic actors
+      result = 0.0f;
    }
 
-   // Can't add force to non-dynamic actors
-   return 0.0f;
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return the resulting mass
+   return result;
 }
 
 bool PhysXRigidActor::addForce(PxVec3 force)
 {
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Only dynamic actors should have forces applied
    if (actor_type == DYNAMIC)
    {
       ((PxRigidDynamic *) rigid_actor)->addForce(force);
-      return true;
+      result = true;
+   }
+   else
+   {
+      // This is not a dynamic actor, so forces cannot be applied
+      result = false;
    }
 
-   return false;
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether the force application was successful
+   return result;
 }
 
 
 bool PhysXRigidActor::addTorque(PxVec3 torque)
 {
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Only dynamic actors should have torque applied
    if (actor_type == DYNAMIC)
    {
       // Cast the actor into a dynamic actor and apply the torque
       ((PxRigidDynamic *) rigid_actor)->addTorque(torque);
-      return true;
+      result = true;
    }
    else
    {
       // This is not a dynamic actor, so torque cannot be applied
-      return false;
+      result = false;
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether the torque application was successful
+   return result;
 }
 
 
@@ -396,8 +555,14 @@ void PhysXRigidActor::setTransformation(float posX, float posY, float posZ,
    // Create a new transform that uses the updated position and orientation
    transform = PxTransform(position, quaternion);
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Change the global position and orientation to the new transform
    rigid_actor->setGlobalPose(transform);
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
@@ -406,6 +571,9 @@ void PhysXRigidActor::setPosition(ActorPosition pos)
    PxTransform   transform;
    PxQuat        quaternion;
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Create the new position with the given values
    quaternion = rigid_actor->getGlobalPose().q;
    transform = PxTransform(PxVec3(pos.x, pos.y, pos.z), quaternion);
@@ -413,6 +581,9 @@ void PhysXRigidActor::setPosition(ActorPosition pos)
    // Update the actor's position and indicate that it should be
    // woken up so that it can be updated during the simulation step
    rigid_actor->setGlobalPose(transform);
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
@@ -421,8 +592,14 @@ ActorPosition PhysXRigidActor::getPosition()
    PxVec3          position;
    ActorPosition   retPosition;
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Acquire the current position of this actor
    position = rigid_actor->getGlobalPose().p;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 
    // Store the position values so that PhysX does not change the values while
    // the information is being used
@@ -440,6 +617,9 @@ void PhysXRigidActor::setRotation(ActorOrientation orient)
    PxTransform   transform;
    PxVec3        position;
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Get the current position to prevent changes to the position of this actor
    // when the orientation changes
    position = rigid_actor->getGlobalPose().p;
@@ -450,6 +630,9 @@ void PhysXRigidActor::setRotation(ActorOrientation orient)
 
    // Update the actor to use the new orientation
    rigid_actor->setGlobalPose(transform);
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
@@ -458,8 +641,14 @@ ActorOrientation PhysXRigidActor::getRotation()
    PxQuat             quaternion;
    ActorOrientation   retOrientation;
 
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Acquire the current orienation of this actor
    quaternion = rigid_actor->getGlobalPose().q;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 
    // Store the orientation into a returnable value so that PhysX does not
    // change the values while the information is being used
@@ -475,19 +664,31 @@ ActorOrientation PhysXRigidActor::getRotation()
 
 void PhysXRigidActor::setLinearVelocity(float x, float y, float z)
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Update the actor's linear velocity
    if (actor_type == DYNAMIC)
       ((PxRigidDynamic *) rigid_actor)->setLinearVelocity(PxVec3(x, y, z));
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 void PhysXRigidActor::setAngularVelocity(float x, float y, float z)
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Update the actor's angular velocity
    if (actor_type == DYNAMIC)
    {
       ((PxRigidDynamic *) rigid_actor)->setAngularVelocity(PxVec3(x, y, z));
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
@@ -500,6 +701,9 @@ void PhysXRigidActor::setGravity(float x, float y, float z)
 
 void PhysXRigidActor::enableGravity(bool enabled)
 {
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Update whether gravity should affect this actor, normally used for static
    // actors or flying avatars
    if (enabled)
@@ -510,29 +714,58 @@ void PhysXRigidActor::enableGravity(bool enabled)
    {
       rigid_actor->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 
 bool PhysXRigidActor::isDynamic()
 {
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Use the ActorType enumertation to determine if the actor is dynamic or
    // static
    if (actor_type == DYNAMIC)
-      return true;
+      result = true;
    else
-      return false;
+      result = false;
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether the actor is static or dynamic
+   return result;
 }
 
 
 bool PhysXRigidActor::setMass(float mass)
 {
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
    // Only dynamic actors can have mass
    if (actor_type == DYNAMIC)
-      return PxRigidBodyExt::setMassAndUpdateInertia(
+   {
+      result = PxRigidBodyExt::setMassAndUpdateInertia(
                 *((PxRigidDynamic *) rigid_actor), mass);
+   }
+   else
+   {
+      // Not allowed to set mass on non-dynamic actors
+      result = false;
+   }
 
-   // Not allowed to set mass on non-dynamic actors
-   return false;
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether the operation was successful
+   return result;
 }
 
 

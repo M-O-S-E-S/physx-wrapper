@@ -33,6 +33,8 @@
 
 #include "cuda.h"
 
+#include "pthread.h"
+
 #include "PhysXCollisionCallback.h++"
 #include "PhysXJoint.h++"
 #include "PhysXRigidActor.h++"
@@ -65,6 +67,8 @@ static int                               max_updates;
 
 static atMap *                           actor_map = new atMap();
 static atMap *                           joint_map = new atMap();
+
+static pthread_mutex_t                   actor_map_mutex;
 
 static debugger::comm::PvdConnection *   theConnection = NULL;
 
@@ -256,6 +260,9 @@ PHYSX_API int initialize()
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
+
+   // Initialize the mutex that will ensure the thread-safety of the actor map
+   pthread_mutex_init(&actor_map_mutex, NULL);
    
    // Create and initialize the PhysX foundation
    px_foundation = PxCreateFoundation(
@@ -319,6 +326,9 @@ PHYSX_API void release()
 
    // Clean-up callback
    delete px_collisions;
+
+   // Clean up the actor map mutex
+   pthread_mutex_destroy(&actor_map_mutex);
 }
 
 
@@ -537,6 +547,9 @@ PHYSX_API void createActor(
    // actor
    checkID = new atInt(id);
 
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
    // Check that the scene has been initialized an that the actor doesn't
    // exist
    if (scene_initialized == true && !actor_map->containsKey(checkID))
@@ -567,6 +580,9 @@ PHYSX_API void createActor(
          "initialized.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean-up
    delete checkID;
 }
@@ -592,8 +608,13 @@ PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Attempt to fetch the actor with the given ID
+   // Create a temporary ID for map lookup
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Attempt to fetch the actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -632,6 +653,9 @@ PHYSX_API void attachSphere(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to attach sphere! Actor not found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
@@ -658,8 +682,13 @@ PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Attempt to fetch the actor with the given ID
+   // Create a temporary ID for map lookup
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Attempt to fetch the actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -698,6 +727,9 @@ PHYSX_API void attachBox(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to attach box! Actor not found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
@@ -724,8 +756,13 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
       return;
    }
 
-   // Attempt to fetch the actor with the given ID
+   // Create a temporary ID for map lookup
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Attempt to fetch the actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID
@@ -764,6 +801,9 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
       logger->notify(AT_WARN, "Failed to attach capsule! Actor not found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
@@ -795,8 +835,13 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Attempt to fetch the actor with the given ID
+   // Create a temporary ID for map lookup
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Attempt to fetch the actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found with the given ID and that it is
@@ -834,65 +879,47 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       meshDesc.triangles.data = indexArray;
 
       // Check to see if the mesh description forms a valid mesh
-      if (!px_cooking->validateTriangleMesh(meshDesc))
+      if (px_cooking->validateTriangleMesh(meshDesc))
       {
-         // Warn the user, clean up and exit, because the method cannot
-         // proceed with malformed mesh data
-         logger->notify(AT_WARN, "Invalid triangle mesh data\n");
-         delete actorID;
-         delete[] vertexArray;
-         delete[] indexArray;
-         return;
+         // Create the triangle mesh using the cooking library
+         triangleMesh = px_cooking->createTriangleMesh(
+            meshDesc, px_physics->getPhysicsInsertionCallback());
+ 
+         // Check to see if the newly-created mesh is valid
+         if (triangleMesh != NULL)
+         {
+            // Create the geometry for the mesh
+            meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
+            meshScale.rotation = PxQuat::createIdentity();
+            geometry = PxTriangleMeshGeometry(
+               triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
+  
+            // Create the shape based on the given geometry and material
+            shape = px_physics->createShape(geometry, *material, true);
+  
+            // Check to see if a valid shape was constructed
+            if (shape != NULL)
+            {
+               // Set the position and orientation of the mesh relative to
+               // the actor using the given parameters
+               localPose.p = PxVec3(x, y, z);
+               localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
+               shape->setLocalPose(localPose);
+     
+               // Ensure that the following changes to the scene are thread-safe
+               px_scene->lockWrite();
+     
+               // Add the newly-created shape to the given actor
+               // (use a 0 density as this density will not be used due to
+               // the actor being static)
+               actor->addShape(shapeId, shape, 0.0f);
+
+               // Now that the shape has been added, unlock writing on
+               // other threads
+               px_scene->unlockWrite();
+            }
+         }
       }
-
-      // Create the triangle mesh using the cooking library
-      triangleMesh = px_cooking->createTriangleMesh(
-         meshDesc, px_physics->getPhysicsInsertionCallback());
-
-      // Check to see if the newly-created mesh is not valid
-      if (triangleMesh == NULL)
-      {
-         logger->notify(AT_WARN, "Unable to create triangle mesh\n");
-         delete actorID;
-         delete[] vertexArray;
-         delete[] indexArray;
-         return;
-      }
-
-      // Create the geometry for the mesh
-      meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
-      meshScale.rotation = PxQuat::createIdentity();
-      geometry = PxTriangleMeshGeometry(
-         triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
-
-      // Create the shape based on the given geometry and material
-      shape = px_physics->createShape(geometry, *material, true);
-
-      // Check to see if a valid shape was constructed
-      if (shape == NULL)
-      {
-         // Clean up and exit, as the shape cannot be attached
-         delete actorID;
-         delete[] vertexArray;
-         delete[] indexArray;
-         return;
-      }
-
-      // Set the position and orientation of the mesh relative to the actor
-      // using the given parameters
-      localPose.p = PxVec3(x, y, z);
-      localPose.q = PxQuat(rotX, rotY, rotZ, rotW);
-      shape->setLocalPose(localPose);
-
-      // Ensure that the following changes to the scene are thread-safe
-      px_scene->lockWrite();
-
-      // Add the newly-created shape to the given actor (use a 0 density
-      // as this density will not be used due to the actor being static)
-      actor->addShape(shapeId, shape, 0.0f);
-
-      // Now that the shape has been added, unlock writing on other threads
-      px_scene->unlockWrite();
 
       // Clean-up arrays
       delete[] vertexArray;
@@ -914,6 +941,9 @@ PHYSX_API void attachTriangleMesh(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to attach triangle mesh! Actor not "
          "found.\n");
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 
    // Clean up the temporary ID created to look up the actor
    delete actorID;
@@ -950,6 +980,9 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
 
    // Create a new atInt that will be used to find the actor with the given ID
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Attempt to fetch the actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
@@ -1028,6 +1061,9 @@ PHYSX_API void attachConvexMesh(unsigned int id, unsigned int shapeId,
          "found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary atInt created to look up the actor
    delete actorID;
 }
@@ -1046,6 +1082,9 @@ PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
          "initialized.\n");
       return;
    }
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Attempt to fetch the actor with the given ID
    actorID = new atInt(id);
@@ -1069,6 +1108,9 @@ PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
       logger->notify(AT_WARN, "Failed to remove shape! Actor not found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary ID created to look up the actor
    delete actorID;
 }
@@ -1088,6 +1130,9 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
    // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
@@ -1125,6 +1170,9 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
          "initialized or actor already existed.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the memory holding the id
    delete checkID;
 }
@@ -1144,6 +1192,9 @@ PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
    // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
@@ -1181,6 +1232,9 @@ PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
          "initialized or actor already existed.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the memory used by the id
    delete checkID;
 }
@@ -1202,6 +1256,9 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
    // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
@@ -1246,6 +1303,9 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
          "initialized or actor already existed.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the memory used by the id
    delete checkID;
 }
@@ -1270,6 +1330,9 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
    // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
@@ -1313,18 +1376,18 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       // Create the triangle mesh using the cooking library
       triangleMesh = px_cooking->createTriangleMesh(
          meshDesc, px_physics->getPhysicsInsertionCallback());
-
+ 
       // Create a geometry
       meshScale.scale = PxVec3(1.0f, 1.0f, 1.0f);
       meshScale.rotation = PxQuat::createIdentity();
       meshGeom = PxTriangleMeshGeometry(
          triangleMesh, meshScale, PxMeshGeometryFlag::eDOUBLE_SIDED);
-
+ 
       // Create a new shape for the mesh and add it to the actor (use a 0,
       // as it won't matter for the static actor)
       meshShape = px_physics->createShape(meshGeom, *material, true);
       actor->addShape(shapeId, meshShape, 0.0f);
-
+ 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
 
@@ -1344,6 +1407,9 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       logger->notify(AT_WARN, "Unable to create triangle mesh for actor, "
          "because the scene wasn't initialized or actor already existed.\n");
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 
    // Clean up the memory used by the id
    delete checkID;
@@ -1370,6 +1436,9 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
    // Create a new ID that will be used to search the map for a duplicate
    // actor
    checkID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Check that the scene has been initialized and that the actor doesn't
    // already exist
@@ -1426,6 +1495,10 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
          // Add the newly created actor to the scene
          px_scene->addActor(*(actor->getActor()));
       }
+      else
+      {
+         logger->notify(AT_WARN, "Unable to cook convex mesh!\n");
+      }
 
       // Finished creating new mesh actor
       px_scene->unlockWrite();
@@ -1442,6 +1515,9 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
       logger->notify(AT_WARN, "Unable to create convex mesh due to scene "
          "initialization or actor already exists.\n");
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 
    // Clean up the memory used by the id
    delete checkID;
@@ -1460,6 +1536,9 @@ PHYSX_API void removeActor(unsigned int id)
       return;
    }
 
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
    // Try and remove the given actor from the map and check to see
    // if the actor exists
    searchID = new atInt(id);
@@ -1470,20 +1549,24 @@ PHYSX_API void removeActor(unsigned int id)
       // Alert that the given actor name could not be found
       logger->notify(AT_WARN, "Failed to remove actor %u. Actor not found.\n",
          id);
-      return;
+   }
+   else
+   {
+      px_scene->lockWrite();
+ 
+      // Remove the desired actor from the scene and specify that all
+      // touching objects should be updated (woken up)
+      actor = rigidActor->getActor();
+      px_scene->removeActor(*actor, true);
+ 
+      // Finalize removal by removing the actor data
+      delete rigidActor;
+ 
+      px_scene->unlockWrite();
    }
 
-   px_scene->lockWrite();
-
-   // Remove the desired actor from the scene and specify that all
-   // touching objects should be updated (woken up)
-   actor = rigidActor->getActor();
-   px_scene->removeActor(*actor, true);
-
-   // Finalize removal by removing the actor data
-   delete rigidActor;
-
-   px_scene->unlockWrite();
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
@@ -1505,8 +1588,13 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       return;
    }
 
-   // Attempt to find an actor with the given ID
+   // Create a temporary ID for map lookup
    actorID = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Attempt to find an actor with the given ID
    actor = (PhysXRigidActor *) actor_map->getValue(actorID);
 
    // Check to see if an actor was found
@@ -1541,6 +1629,9 @@ PHYSX_API void updateMaterialProperties(unsigned int id, unsigned int shapeId,
       logger->notify(AT_WARN, "Failed to update material. Actor not found.\n");
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Clean up the temporary atInt used for looking up the actor
    delete actorID;
 }
@@ -1550,6 +1641,9 @@ PHYSX_API float getActorMass(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
    float               result;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Fetch the physx actor by the given id
    rigidActor = getActor(id);
@@ -1561,12 +1655,18 @@ PHYSX_API float getActorMass(unsigned int id)
       px_scene->lockRead();
       result = rigidActor->getMass();
       px_scene->unlockRead();
-
-      return result;
    }
+   else
+   {
+      // The actor does not have a mass or doesn't exist
+      result = 0.0f;
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
    
    // Otherwise, return 0.0f
-   return 0.0f;
+   return result;
 }
 
 PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float forceZ)
@@ -1577,6 +1677,9 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
 
    // We assume the result is false, until otherwise
    result = false;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Create the force vector and get the actor
    force = PxVec3(forceX, forceY, forceZ);
@@ -1590,6 +1693,9 @@ PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float force
       result = rigidActor->addForce(force);
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
    
    // Finally, return the result of adding the force
    return result;
@@ -1606,6 +1712,9 @@ PHYSX_API bool addTorque(unsigned int id, float torqueX, float torqueY,
    // We assume the result is false, until otherwise
    result = false;
 
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
    // Create the torque vector and get the actor
    force = PxVec3(torqueX, torqueY, torqueZ);
    rigidActor = getActor(id);
@@ -1620,6 +1729,9 @@ PHYSX_API bool addTorque(unsigned int id, float torqueX, float torqueY,
       px_scene->unlockWrite();
    }
 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
    // Finally, return the result of adding the torque
    return result;
 }
@@ -1629,6 +1741,9 @@ PHYSX_API void setTransformation(unsigned int id, float posX, float posY,
    float posZ, float rotX, float rotY, float rotZ, float rotW)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Attempt to get the specified actor by its id
    rigidActor = getActor(id);
@@ -1641,12 +1756,18 @@ PHYSX_API void setTransformation(unsigned int id, float posX, float posY,
       rigidActor->setTransformation(posX, posY, posZ, rotX, rotY, rotZ, rotW);
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
 PHYSX_API void setPosition(unsigned int id, ActorPosition pos)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Update the position of the given actor, if found
    rigidActor = getActor(id);
@@ -1661,6 +1782,9 @@ PHYSX_API void setPosition(unsigned int id, ActorPosition pos)
       logger->notify(AT_WARN, "Failed to update actor %u's position. Actor "
          "not found.\n", id);
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
@@ -1668,6 +1792,9 @@ PHYSX_API ActorPosition getPosition(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
    ActorPosition       result;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1679,22 +1806,31 @@ PHYSX_API ActorPosition getPosition(unsigned int id)
       px_scene->lockRead();
       result = rigidActor->getPosition();
       px_scene->unlockRead();
-      return result;
    }
    else
    {
       // Let the user know that the actor could not be found
       logger->notify(AT_WARN, "Failed to retrieve actor %u's position. Actor "
          "not found.\n", id);
-      ActorPosition zero = {0.0, 0.0, 0.0};
-      return zero;
+      result.x = 0.0;
+      result.y = 0.0;
+      result.z = 0.0;
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
+   // Return the position
+   return result;
 }
 
 
 PHYSX_API void setRotation(unsigned int id, ActorOrientation orient)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1713,6 +1849,9 @@ PHYSX_API void setRotation(unsigned int id, ActorOrientation orient)
       logger->notify(AT_WARN, "Failed to update actor %u's rotation. Actor "
          "not found.\n", id);
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
@@ -1720,6 +1859,9 @@ PHYSX_API ActorOrientation getRotation(unsigned int id)
 {
    PhysXRigidActor *   rigidActor;
    ActorOrientation    result;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1731,22 +1873,32 @@ PHYSX_API ActorOrientation getRotation(unsigned int id)
       px_scene->lockRead();
       result = rigidActor->getRotation();
       px_scene->unlockRead();
-      return result;
    }
    else
    {
       // Let the user know that the actor could not be found
       logger->notify(AT_WARN, "Failed to retrieve actor %u's rotation. Actor "
          "not found.\n", id);
-      ActorOrientation zero = {0.0, 0.0, 0.0, 1.0};
-      return zero;
+      result.x = 0.0;
+      result.y = 0.0;
+      result.z = 0.0;
+      result.w = 1.0;
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
+   // Return the orientation
+   return result;
 }
 
 
 PHYSX_API void setLinearVelocity(unsigned int id, float x, float y, float z)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1759,12 +1911,18 @@ PHYSX_API void setLinearVelocity(unsigned int id, float x, float y, float z)
       rigidActor->setLinearVelocity(x, y, z);
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
 PHYSX_API void setAngularVelocity(unsigned int id, float x, float y, float z)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1777,12 +1935,18 @@ PHYSX_API void setAngularVelocity(unsigned int id, float x, float y, float z)
       rigidActor->setAngularVelocity(x, y, z);
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
 PHYSX_API void setGravity(unsigned int id, float x, float y, float z)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1801,12 +1965,18 @@ PHYSX_API void setGravity(unsigned int id, float x, float y, float z)
       logger->notify(AT_WARN, "Failed to update actor %u's gravity. Actor not "
          "found.\n", id);
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
 PHYSX_API void enableGravity(unsigned int id, bool enabled)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Get the actor associated with the identifier from the map of actors
    rigidActor = getActor(id);
@@ -1819,6 +1989,9 @@ PHYSX_API void enableGravity(unsigned int id, bool enabled)
       rigidActor->enableGravity(enabled);
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
@@ -1826,6 +1999,9 @@ PHYSX_API void updateShapeDensity(unsigned int id, unsigned int shapeID,
    float density)
 {
    PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Fetch the actor based on the given ID
    rigidActor = getActor(id);
@@ -1843,6 +2019,9 @@ PHYSX_API void updateShapeDensity(unsigned int id, unsigned int shapeID,
       // from other threads
       px_scene->unlockWrite();
    }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 }
 
 
@@ -1850,6 +2029,9 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
 {
    PhysXRigidActor *   rigidActor;
    bool                result;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
 
    // Fetch the actor by the given id
    rigidActor = getActor(id);
@@ -1861,9 +2043,17 @@ PHYSX_API bool updateActorMass(unsigned int id, float mass)
       result = rigidActor->setMass(mass);
       px_scene->unlockWrite();
    }
+   else
+   {
+      // If the actor is not dynamic, or is not found, return false
+      result = false;
+   }
 
-   // If the actor is not dynamic, or is not found, return false
-   return false;
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
+   // Return whether the operaton was successful
+   return result;
 }
 
 
@@ -2238,19 +2428,23 @@ PHYSX_API void addJoint(unsigned int jointID, unsigned int actorID1,
    // Check whether or not a joint with the given ID already exists;
    // can't have the same IDs for different joints
    physXJoint = (PhysXJoint *) joint_map->getValue(jointKey);
-   if (physXJoint != NULL)
+   if (physXJoint == NULL)
    {
-      return;
+      // Ensure that the following operations are thread-safe
+      pthread_mutex_lock(&actor_map_mutex);
+ 
+      // Get the actors associated with a joint from the given actor IDs
+      actor1 = getActor(actorID1);
+      actor2 = getActor(actorID2);
+ 
+      // Construct the joint using the actors that were found
+      constructJoint(jointID, actor1, actor2, actor1Pos, actor1Quat, actor2Pos,
+                     actor2Quat, linearLowerLimit, linearUpperLimit,
+                     angularLowerLimit, angularUpperLimit);
+ 
+      // Now that the operations are complete, unlock the mutex
+      pthread_mutex_unlock(&actor_map_mutex);
    }
-
-   // Get the actors associated with a joint from the given actor IDs
-   actor1 = getActor(actorID1);
-   actor2 = getActor(actorID2);
-
-   // Construct the joint using the actors that were found
-   constructJoint(jointID, actor1, actor2, actor1Pos, actor1Quat, actor2Pos,
-                  actor2Quat, linearLowerLimit, linearUpperLimit,
-                  angularLowerLimit, angularUpperLimit);
 
    // Now that the operation is complete, clean up the key
    delete jointKey;
@@ -2279,6 +2473,9 @@ PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
       return;
    }
 
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
    // Find the actor with the given ID
    actor1 = getActor(actorID);
 
@@ -2289,6 +2486,9 @@ PHYSX_API void addGlobalFrameJoint(unsigned int jointID, unsigned int actorID,
    constructJoint(jointID, actor1, actor2, actorPos, actorQuat, actorPos,
                   actorQuat, linearLowerLimit, linearUpperLimit,
                   angularLowerLimit, angularUpperLimit);
+ 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
 
    // Now that the operation is complete, clean up the key
    delete jointKey;
@@ -2301,10 +2501,14 @@ PHYSX_API void removeJoint(unsigned int id)
    atInt *        jointKey;
    PhysXJoint *   joint;
 
-   // Remove the given joint from the map
+   // Create a temporary key for map lookup
    jointKey = new atInt(id);
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Remove the given joint from the map
    joint = (PhysXJoint *) joint_map->removeEntry(jointKey);
-   delete jointKey;
 
    // Clean up the joint if it existed in a thread-safe manner
    px_scene->lockWrite();
@@ -2314,6 +2518,12 @@ PHYSX_API void removeJoint(unsigned int id)
       delete joint;
    }
    px_scene->unlockWrite();
+ 
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+
+   // Clean up the temporary key
+   delete jointKey;
 }
 
 
