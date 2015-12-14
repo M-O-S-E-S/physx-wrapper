@@ -100,6 +100,10 @@ class PhysXRigidActor : public atItem
       ///
       static const float   default_density;
 
+      /// Mutex object that ensures the thread-safety of the rigid actor.
+      ///
+      pthread_mutex_t      actor_mutex;
+
    public:
       /// Constructor
       ///
