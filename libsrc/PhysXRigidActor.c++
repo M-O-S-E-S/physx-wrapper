@@ -162,6 +162,9 @@ PhysXRigidActor::~PhysXRigidActor()
 
    // Now that the operations are complete, unlock the mutex
    pthread_mutex_unlock(&actor_mutex);
+
+   // Clean up the mutex for this actor
+   pthread_mutex_destroy(&actor_mutex);
 }
 
 
@@ -457,6 +460,9 @@ char * PhysXRigidActor::getName()
 
    // Now that the operations are complete, unlock the mutex
    pthread_mutex_unlock(&actor_mutex);
+
+   // Return the name of the actor
+   return result;
 }
 
 
