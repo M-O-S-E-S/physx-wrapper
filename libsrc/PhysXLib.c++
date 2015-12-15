@@ -72,7 +72,7 @@ static pthread_mutex_t                   actor_map_mutex;
 
 static debugger::comm::PvdConnection *   theConnection = NULL;
 
-static float                             height_field_scale;
+static float                             default_height_field_scale;
 
 static atNotifier *                      logger;
 
@@ -282,9 +282,9 @@ PHYSX_API int initialize()
    px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation,
       PxCookingParams(PxTolerancesScale()));
 
-   // For now us a default value for the height scale to change the height
+   // Initialize the default value for the height scale to change the height
    // field values from floats to integers and back again
-   height_field_scale = 0.001f;
+   default_height_field_scale = 0.01f;
 
    // Warn user that cooking utilities were unable to be created
    if (px_cooking == NULL)
@@ -2100,7 +2100,8 @@ PHYSX_API void releaseGroundPlane()
 
 PHYSX_API void setHeightField(unsigned terrainActorID,
    unsigned int terrainShapeID, int regionSizeX, int regionSizeY,
-   float rowSpacing, float columnSpacing, float * posts)
+   float rowSpacing, float columnSpacing, float * posts,
+   float heightScaleFactor)
 {
    PxHeightFieldDesc         heightFieldDescription;
    uint64_t                  numPosts;
@@ -2112,6 +2113,7 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    PxShape *                 newShape;
    PhysXRigidActor *         actor;
    atInt *                   terrainID;
+   float                     heightScale;
 
    // TODO: Check that the terrain is added to the correct scene for 
    // mega region support
@@ -2132,6 +2134,13 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    // cases
    heightFieldDescription.thickness = -10.0f;
 
+   // Check to see if the given height scale value is valid. If so, use it.
+   // Otherwise, use the default scale factor
+   if (heightScaleFactor > 0.0)
+      heightScale = heightScaleFactor;
+   else
+      heightScale = default_height_field_scale;
+
    // Determine the number of datapoints inside of the posts array
    numPosts = regionSizeX * regionSizeY;
 
@@ -2150,7 +2159,7 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
       // NOTE: Both the incoming height field and the sample array have
       // row-major ordering, so the elements can be copied directly
       heightFieldSampleArray[i].height = (PxI16)(posts[i] /
-         height_field_scale);
+         heightScale);
 
       // For now, differing materials are not supported in the height field, so
       // the default material indices are used
@@ -2188,7 +2197,7 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
    // Use the height field, scale, and spacing of posts to create a height
    // field geometry
    heightFieldGeometry = new PxHeightFieldGeometry(heightField,
-      PxMeshGeometryFlags(), height_field_scale, rowSpacing, columnSpacing);
+      PxMeshGeometryFlags(), heightScale, rowSpacing, columnSpacing);
 
    // Create a default material
    // TODO: Allow this to be passed into function rather than assuming
