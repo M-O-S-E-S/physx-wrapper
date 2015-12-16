@@ -260,6 +260,9 @@ PHYSX_API int initialize()
    // Initialize the logger and set the name of this class
    logger = new atNotifier();
    logger->setName("[PhysXLib] ");
+#ifndef LIB_PHYSX_DEBUG
+   logger->setNotifyLevel(AT_ERROR);
+#endif
 
    // Initialize the mutex that will ensure the thread-safety of the actor map
    pthread_mutex_init(&actor_map_mutex, NULL);
