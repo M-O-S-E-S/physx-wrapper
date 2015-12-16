@@ -1672,6 +1672,31 @@ PHYSX_API float getActorMass(unsigned int id)
    return result;
 }
 
+
+PHYSX_API void clearAllForces(unsigned int id)
+{
+    PhysXRigidActor * rigidActor;
+    
+    // Ensure that the following operations are thread-safe
+    pthread_mutex_lock(&actor_map_mutex);
+
+    // Get the actor that was requested
+    rigidActor = getActor(id);
+
+    // Make sure that the actor was found before clearing the forces
+    if (rigidActor != NULL)
+    {
+        // Clear all the forces and movement from the physical actor
+        px_scene->lockWrite();
+        rigidActor->clearAllForces();
+        px_scene->unlockWrite();
+    }
+
+    // Now that the operations are complete, unlock the mutex
+    pthread_mutex_unlock(&actor_map_mutex);
+}
+
+
 PHYSX_API bool addForce(unsigned int id, float forceX, float forceY, float forceZ)
 {
    PxVec3            force;

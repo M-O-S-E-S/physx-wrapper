@@ -236,6 +236,10 @@ class PhysXRigidActor : public atItem
       ///
       float   getMass();
 
+      /// Zero out all motion currently being applied to the actor
+      ///
+      void   clearAllForces();
+
       /// Applies a force (or impulse) to the actor as set by PhysX flags.
       ///
       /// @return bool If the force was applied.

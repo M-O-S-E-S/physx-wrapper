@@ -491,6 +491,16 @@ float PhysXRigidActor::getMass()
    return result;
 }
 
+
+void PhysXRigidActor::clearAllForces()
+{
+    // These methods check if the actor is dynamic so there is no reason to
+    // check for that here, also zero out all motion on the PhysX object
+    setLinearVelocity(0.0f, 0.0f, 0.0f);
+    setAngularVelocity(0.0f, 0.0f, 0.0f);
+}
+
+
 bool PhysXRigidActor::addForce(PxVec3 force)
 {
    bool   result;
