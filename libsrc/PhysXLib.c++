@@ -1675,7 +1675,7 @@ PHYSX_API float getActorMass(unsigned int id)
 
 PHYSX_API void clearAllForces(unsigned int id)
 {
-    PhysXRigidActor * rigidActor;
+    PhysXRigidActor *   rigidActor;
     
     // Ensure that the following operations are thread-safe
     pthread_mutex_lock(&actor_map_mutex);
