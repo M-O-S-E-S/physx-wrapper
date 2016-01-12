@@ -697,6 +697,20 @@ extern "C"
    ///
    void   enableGravity(unsigned int id, bool enabled);
 
+   /// Set the linear damping coefficient of an actor.
+   ///
+   /// @param id The id of the actor that is being modified.
+   /// @param damping The linear damping coefficient to be updated to.
+   ///
+   void setLinearDamping(unsigned int id, float damping);
+
+   /// Set the angular damping coefficient of an actor.
+   ///
+   /// @param id The id of the actor that is being modified.
+   /// @param damping The angular damping coefficient to be updated to.
+   ///
+   void setAngularDamping(unsigned int id, float damping);
+
    /// Updates the density of given shape attached to a given actor.
    ///
    /// @param id The unique identifier of the actor to which the desired shape
@@ -766,6 +780,8 @@ extern "C"
                    float * actor2Pos, float * actor2Quat,
                    float * linearLowerLimit, float * linearUpperLimit,
                    float * angularLowerLimit, float * angularUpperLimit);
+
+
 
    /// Add a joint between an actor and the global frame.
    ///

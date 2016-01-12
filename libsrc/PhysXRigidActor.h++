@@ -240,15 +240,50 @@ class PhysXRigidActor : public atItem
       ///
       void   clearAllForces();
 
-      /// Applies a force (or impulse) to the actor as set by PhysX flags.
+      /// Applies a force to the actor as set by PhysX flags.
       ///
+      /// @param vector The force vector to be applied.
       /// @return bool If the force was applied.
       ///
       bool   addForce(PxVec3 vector);
 
-      /// Applies a torque ot the actor.
+      /// Applies a force as an impulse to the actor as set by PhysX flags.
+      ///
+      /// @param vector The force impulse vector to be applied.
+      /// @return bool If the force was applied.
+      ///
+      bool   addForceImpulse(PxVec3 vector); 
+
+      /// Applies a torque to the actor.
+      ///
+      /// @param vector The torque vector to be applied.
+      /// @return bool If the force was applied.
       ///
       bool   addTorque(PxVec3 torque);
+
+
+      /// Applies torque as an impulse to the actor
+      ///
+      /// @param vector The torque impulse vector to be applied.
+      /// @return bool If the torque was applied.
+      ///
+      bool   addTorqueImpulse(PxVec3 torque);
+
+      /// Sets the linear damping coefficient.
+      ///
+      /// @param damping The linear damping coefficient that ensures
+      /// that a moving a rotating rigid body will asymptotically approach
+      /// the rest state in the absence of other forces in the linear axes.
+      ///
+      void   setLinearDamping(float damping);
+
+      /// Sets the angular damping coefficient.
+      ///
+      /// @param damping The angular damping coefficient that ensures
+      /// that a moving a rotating rigid body will asymptotically approach
+      /// the rest state in the absence of other forces in the angular axes.
+      ///
+      void   setAngularDamping(float damping);
 
       /// Changes the position and orientation of the actor.
       ///

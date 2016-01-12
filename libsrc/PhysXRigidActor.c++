@@ -511,7 +511,40 @@ bool PhysXRigidActor::addForce(PxVec3 force)
    // Only dynamic actors should have forces applied
    if (actor_type == DYNAMIC)
    {
-      ((PxRigidDynamic *) rigid_actor)->addForce(force);
+      // Add a force to the object, the eFORCE flag indicates
+      // that the force will be applied over a duration rather than
+      // instantaneously
+      ((PxRigidDynamic *) rigid_actor)->addForce(force, PxForceMode::eFORCE);
+      result = true;
+   }
+   else
+   {
+      // This is not a dynamic actor, so forces cannot be applied
+      result = false;
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether the force application was successful
+   return result;
+}
+
+
+bool PhysXRigidActor::addForceImpulse(PxVec3 force)
+{
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
+   // Only dynamic actors should have forces applied
+   if (actor_type == DYNAMIC)
+   {
+      // Add a force to the object, the eIMPULSE flag indicates
+      // that the force will be applied instantaneously rather than
+      // over a duration
+      ((PxRigidDynamic *) rigid_actor)->addForce(force, PxForceMode::eIMPULSE);
       result = true;
    }
    else
@@ -538,8 +571,10 @@ bool PhysXRigidActor::addTorque(PxVec3 torque)
    // Only dynamic actors should have torque applied
    if (actor_type == DYNAMIC)
    {
-      // Cast the actor into a dynamic actor and apply the torque
-      ((PxRigidDynamic *) rigid_actor)->addTorque(torque);
+      // Add a torque to the object, the eFORCE flag indicates
+      // that the torque will be applied decaying over a duration 
+      // of time rather than instantaneously
+      ((PxRigidDynamic *) rigid_actor)->addTorque(torque, PxForceMode::eFORCE);
       result = true;
    }
    else
@@ -553,6 +588,70 @@ bool PhysXRigidActor::addTorque(PxVec3 torque)
 
    // Return whether the torque application was successful
    return result;
+}
+
+
+bool PhysXRigidActor::addTorqueImpulse(PxVec3 torque)
+{
+   bool   result;
+
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
+   // Only dynamic actors should have torque applied
+   if (actor_type == DYNAMIC)
+   {
+      // Add a torque impulse to the object, the eIMPULSE flag indicates
+      // that the torque will be applied instantaneously rather than
+      // over a duration of time 
+      ((PxRigidDynamic *) rigid_actor)->addTorque(torque, PxForceMode::eIMPULSE);
+      result = true;
+   }
+   else
+   {
+      // This is not a dynamic actor, so torque cannot be applied
+      result = false;
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+
+   // Return whether there torque application was successful
+   return result;
+}
+
+
+void PhysXRigidActor::setLinearDamping(float damping)
+{
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
+   // Only dynamic actors should have linear damping coefficient
+   if(actor_type == DYNAMIC)
+   {
+      // Set the linear damping coefficient
+      ((PxRigidDynamic *) rigid_actor)->setLinearDamping(damping);
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
+}
+
+
+void PhysXRigidActor::setAngularDamping(float damping)
+{
+   // Ensure that the following operations on the actor are thread-safe
+   pthread_mutex_lock(&actor_mutex);
+
+   // Only dynamic actors should have linear damping coefficient
+   if(actor_type == DYNAMIC)
+   {
+      // Set the angular damping coefficient
+      ((PxRigidDynamic *) rigid_actor)->setAngularDamping(damping);
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_mutex);
 }
 
 

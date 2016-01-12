@@ -2023,6 +2023,54 @@ PHYSX_API void enableGravity(unsigned int id, bool enabled)
 }
 
 
+PHYSX_API void setLinearDamping(unsigned int id, float damping)
+{
+   PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Get the actor associated with the identifier from the map of actors
+   rigidActor = getActor(id);
+
+   // Make sure the actor was found
+   if (rigidActor != NULL)
+   {
+      // Set the linear damping coefficient
+      px_scene->lockWrite();
+      rigidActor->setLinearDamping(damping);
+      px_scene->unlockWrite();
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+}
+
+
+PHYSX_API void setAngularDamping(unsigned int id, float damping)
+{
+   PhysXRigidActor *   rigidActor;
+
+   // Ensure that the following operations are thread-safe
+   pthread_mutex_lock(&actor_map_mutex);
+
+   // Get the actor associated with the identifier from the map of actors
+   rigidActor = getActor(id);
+
+   // Make sure the actor was found
+   if (rigidActor != NULL)
+   {
+      // Set the angular damping coefficient
+      px_scene->lockWrite();
+      rigidActor->setAngularDamping(damping);
+      px_scene->unlockWrite();
+   }
+
+   // Now that the operations are complete, unlock the mutex
+   pthread_mutex_unlock(&actor_map_mutex);
+}
+
+
 PHYSX_API void updateShapeDensity(unsigned int id, unsigned int shapeID,
    float density)
 {
