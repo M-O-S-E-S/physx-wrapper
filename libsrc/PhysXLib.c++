@@ -777,7 +777,7 @@ PHYSX_API void attachCapsule(unsigned int id, unsigned shapeId,
          restitution);
 
       // Create the geometry and shape based on the given data
-      geometry = PxCapsuleGeometry(halfHeight, radius);
+      geometry = PxCapsuleGeometry(radius, halfHeight);
       shape = px_physics->createShape(geometry, *material, true);
 
       // Set the position and orientation of the capsule relative to the actor
@@ -1278,7 +1278,7 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
 
       // Create a capsule geometry and use it and the material
       // to create a new shape
-      geometry = PxCapsuleGeometry(halfHeight, radius);
+      geometry = PxCapsuleGeometry(radius, halfHeight);
       shape = px_physics->createShape(geometry, *material, true);
 
       // Create a relative transform for the capsule geometry to stand
