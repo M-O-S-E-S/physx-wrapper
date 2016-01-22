@@ -21,72 +21,37 @@
 // limitations under the License.
 
 
-/// This is a header file for the PhysXLib.c++ class. It will not actually be
-/// included inside of any file and is used for doxygen commenting. It is also
-/// the main class of the PhysXWrapper and used as the bridge to link c# with
-/// c++.
+/// This is a header file for the PhysXLib.c++ class. It is the main class
+/// of the PhysXWrapper and used as the bridge to link c# with c++.
 
-/// The PhysX foundation that will be used throughout the PhysXWrapper.
-static PxFoundation *   px_foundation;
 
-/// The PxPhysics object that will be used throughout the PhysXWrapper.
-static PxPhysics *   px_physics;
+#ifndef PHYSX_LIB_H
+#define PHYSX_LIB_H
 
-/// The PxScene that will hold the entire physical scene.
-static PxScene *   px_scene;
+#include "PxPhysicsAPI.h"
 
-/// The PxCooking object that is used when creating the height field.
-static PxCooking *   px_cooking;
+#include "PhysXCollisionCallback.h++"
+#include "PhysXJoint.h++"
+#include "PhysXRigidActor.h++"
 
-/// The default error callback of PhysX used when creating the foundation.
-static PxDefaultErrorCallback   error_callback;
 
-/// The default allocator of PhysX used when creating the foundation.
-static PxDefaultAllocator   allocator_callback;
-
-/// Object that will handle the receiving and storage of all collisions within
-/// the physical scene.
-static PhysXCollisionCallback *   px_collisions;
-
-/// Rigid static physical object that will hold the ground plane of the
-/// physical scene.
-static PxRigidStatic *   ground_plane;
-
-/// Flag that tracks when the scene has been initialized.
-static int   scene_initialized;
-
-/// The max number of updates that can be passed from PhysXWrapper.
-/// This number is based on the size of the pinned memory array responsible for
-/// passing updates from the PhysXWrapper.
-static int   max_updates;
-
-/// Map of all the actors in the current scene with keys being equal to the
-/// actor's id stored inside an atInt and the value being the actor.
-static atMap *   actor_map;
-
-/// Map of all the joints in the current scene with keys being equal to
-// the joint's id stored in an atInt and the value being the joint itself.
-static atMap *   joint_map;
-
-/// PvdConnection used to establish a stream with PhysX visual debugger.
-static debugger::comm::PvdConnection *   theConnection;
-
-/// A global value to store a specific ID for the terrain since none will be
-/// provided.
-static atInt *   terrain_id;
-
-/// The height field scale that will be used to adjust the height field to an
-/// integer from a float and vice a versa.
-static float   height_field_scale;
-
-/// Array of updates that is shared.
-static EntityProperties *   update_array;
-
-/// Array of collisions that is shared.
-static CollisionProperties *   collisions_array;
-
-/// A struct shared in order to pass data consistently through the update array.
-struct EntityProperties;
+struct EntityProperties
+{
+   unsigned int   ID;
+   float          PositionX;
+   float          PositionY;
+   float          PositionZ;
+   float          RotationX;
+   float          RotationY;
+   float          RotationZ;
+   float          RotationW;
+   float          VelocityX;
+   float          VelocityY;
+   float          VelocityZ;
+   float          AngularVelocityX;
+   float          AngularVelocityY;
+   float          AngularVelocityZ;
+};
 
 
 /// Method to create an actor either dynamic or static with given id, name, and
@@ -102,8 +67,8 @@ struct EntityProperties;
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
-   float y, float z, bool isDynamic);
+extern PhysXRigidActor *   createRigidActor(unsigned int id, char * name, 
+   float x, float y, float z, bool isDynamic);
 
 /// Method to create an actor either dynamic or static with given id, name, and
 /// position.
@@ -120,8 +85,8 @@ PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
-PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
-   float y, float z, PxQuat Rot, bool isDynamic);
+extern PhysXRigidActor *   createRigidActor(unsigned int id, char * name,
+   float x, float y, float z, PxQuat Rot, bool isDynamic);
 
 /// Method to fetch the actor from the map of actors.
 ///
@@ -130,7 +95,7 @@ PhysXRigidActor *   createRigidActor(unsigned int id, char * name, float x,
 /// @return The actor with the given id or null if the actor was not inside of
 /// the map of actors.
 ///
-PhysXRigidActor *   getActor(unsigned int id);
+extern PhysXRigidActor *   getActor(unsigned int id);
 
 /// Method to fetch the actor from the map of actors.
 ///
@@ -139,7 +104,7 @@ PhysXRigidActor *   getActor(unsigned int id);
 /// @return The actor with the given id or null if the actor was not inside of
 /// the map of actors.
 ///
-PhysXRigidActor *   getActor(atInt * id);
+extern PhysXRigidActor *   getActor(atInt * id);
 
 /// Custom filter shader used for collision filtering and to customize the
 /// collection of flags describing the actions to take on a collision pair.
@@ -147,14 +112,14 @@ PhysXRigidActor *   getActor(atInt * id);
 /// TODO: I don't know the parameters so either Chandler or Rob will have to
 /// make a pass over this and add in the parameters and return value.
 ///
-PxFilterFlags   contactFilterShader(PxFilterObjectAttributes attributes0,
+extern PxFilterFlags   contactFilterShader(PxFilterObjectAttributes attributes0,
    PxFilterData filterData0, PxFilterObjectAttributes attributes1,
    PxFilterData filterData1, PxPairFlags& pairFlags,
    const void * constantBlock, PxU32 constantBlockSize);
 
 /// Method to connect the PhysXWrapper to a running PhysX Visual Debugger.
 ///
-void   startVisualDebugger();
+extern void   startVisualDebugger();
 
 
 extern "C"
@@ -205,7 +170,7 @@ extern "C"
    /// @return 1 if the scene is set up correctly and 0 if the scene was
    /// unable to be created.
    ///
-   void   createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads);
+   int   createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads);
 
    /// Call the scene release to clean up the scene.
    ///
@@ -358,7 +323,7 @@ extern "C"
    void   attachTriangleMesh(unsigned int id, unsigned int shapeId,
                              float staticFriction, float dynamicFriction,
                              float restitution, float * vertices,
-                             float * indices, int vertexCount, int indexCount,
+                             int * indices, int vertexCount, int indexCount,
                              float x, float y, float z, float rotX,
                              float rotY, float rotZ, float rotW);
 
@@ -372,7 +337,7 @@ extern "C"
    /// @param dynamicFriction The dynamic friction to be used for this mesh
    /// when sliding against other objects of the scene.
    /// @param restitution The bounciness of this shape when colliding with other
-   /// objects of hte scene
+   /// objects of the scene
    /// @param vertices The list of vertices that make up the convex mesh.
    /// @param vertexCount The size of the list of vertices.
    /// @param x The position of the mesh along the x-axis relative to the
@@ -475,8 +440,6 @@ extern "C"
    /// scene.
    /// @param z The z value of the position of this actor in the physical
    /// scene.
-   /// @param shapeId The unique identifier of the capsule shape being attached
-   /// to the actor.
    /// @param rotX The x value of the quaternion representing the orientation 
    /// of the capsule shape relative to the actor.
    /// @param rotY The y value of the quaternion representing the orientation 
@@ -485,6 +448,8 @@ extern "C"
    /// of the capsule shape relative to the actor.
    /// @param rotW The w value of the quaternion representing the orientation 
    /// of the capsule shape relative to the actor.
+   /// @param shapeId The unique identifier of the capsule shape being attached
+   /// to the actor.
    /// @param staticFriction The static friction used for this actor when
    /// sliding against other actors in the physical scene.
    /// @param dynamicFriction The dynamic friction used for this actor when
@@ -497,9 +462,10 @@ extern "C"
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
    ///
-   void   createActorCapsule(unsigned int id, char * name, float x, float y, 
-                             float z, unsigned int shapeId, float rotX,
-                             float rotY, float rotZ, float rotW,
+   void   createActorCapsule(unsigned int id, char * name,
+                             float x, float y, float z,
+                             float rotX, float rotY, float rotZ, float rotW,
+                             unsigned int shapeId,
                              float staticFriction, float dynamicFriction,
                              float restitution, float halfHeight, float radius,
                              float density, bool isDynamic);
@@ -534,7 +500,7 @@ extern "C"
                                   float y, float z, unsigned int shapeId,
                                   float staticFriction, float dynamicFriction,
                                   float restitution, float * vertices,
-                                  float * indices, int vertexCount,
+                                  int * indices, int vertexCount,
                                   int indexCount, bool isDynamic);
 
    /// Method to create a convex mesh actor in the physical scene.
@@ -607,7 +573,9 @@ extern "C"
    /// @param torqueY The y-component of the torque being applied.
    /// @param torqueZ The z-component of the torque being applied.
    ///
-   void   addTorque(unsigned int id, float torqueX, float torqueY,
+   /// @return Whether the torque was successfully applied.
+   ///
+   bool   addTorque(unsigned int id, float torqueX, float torqueY,
                     float torqueZ);
 
    /// Updates an actors position and orientation inside the physical scene.
@@ -755,11 +723,12 @@ extern "C"
    /// the posts array.
    /// @param posts The array of height values that will be used to generate
    /// the height field.
+   /// @param heightScaleFactor Scale factor for the heights.
    ///
    void   setHeightField(unsigned int terrainActorID,
                          unsigned int terrainShapeID, int regionSizeX,
                          int regionSizeY, float rowSpacing, float columnSpacing,
-                         float * posts);
+                         float * posts, float heightScaleFactor);
 
    /// Add a joint between two actors.
    ///
@@ -834,9 +803,13 @@ extern "C"
    /// @param angularUpperLimit Upper limits of each of the 3 rotational axes
    ///
    void   constructJoint(unsigned int jointID, PhysXRigidActor * actor1,
-                         PhysXRgidiActor * actor2, float * actor1Pos,
+                         PhysXRigidActor * actor2, float * actor1Pos,
                          float * actor1Quat, float * actor2Pos,
                          float * actor2Quat, float * linearLowerLimit,
                          float * linearUpperLimit, float * angularLowerLimit,
                          float * angularUpperLimit);
+
 }
+
+#endif
+

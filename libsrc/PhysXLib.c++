@@ -21,8 +21,8 @@
 // limitations under the License.
 
 
-#include "iostream"
-#include "PxPhysicsAPI.h"
+#include <iostream>
+#include "PhysXLib.h++"
 
 #include "atMap.h++"
 #include "atNotifier.h++"
@@ -34,10 +34,6 @@
 #include "cuda.h"
 
 #include "pthread.h"
-
-#include "PhysXCollisionCallback.h++"
-#include "PhysXJoint.h++"
-#include "PhysXRigidActor.h++"
 
 
 #ifdef _WIN32
@@ -54,6 +50,8 @@ static PxFoundation *                    px_foundation;
 static PxPhysics *                       px_physics;
 static PxScene *                         px_scene;
 static PxCooking *                       px_cooking;
+
+static PxDefaultCpuDispatcher *          cpu_dispatcher = NULL;
 
 static PxDefaultErrorCallback            error_callback;
 static PxDefaultAllocator                allocator_callback;
@@ -75,24 +73,6 @@ static debugger::comm::PvdConnection *   theConnection = NULL;
 static float                             default_height_field_scale;
 
 static atNotifier *                      logger;
-
-struct EntityProperties
-{
-   unsigned int   ID;
-   float          PositionX;
-   float          PositionY;
-   float          PositionZ;
-   float          RotationX;
-   float          RotationY;
-   float          RotationZ;
-   float          RotationW;
-   float          VelocityX;
-   float          VelocityY;
-   float          VelocityZ;
-   float          AngularVelocityX;
-   float          AngularVelocityY;
-   float          AngularVelocityZ;
-};
 
 static EntityProperties * update_array;
 static CollisionProperties * collisions_array;
@@ -324,6 +304,7 @@ PHYSX_API void release()
    }
 
    // Shut down the physics entirely
+   px_cooking->release();
    px_physics->release();
    px_foundation->release();
 
@@ -359,7 +340,6 @@ PHYSX_API void initCollisionUpdate(
 
 PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
 {
-   PxDefaultCpuDispatcher *   cpuDispatcher;
    PxCudaContextManagerDesc   cudaManagerDesc;
    PxCudaContextManager *     cudaContextManager;
    PxProfileZoneManager *     profileZoneManager;
@@ -493,20 +473,20 @@ PHYSX_API int createScene(bool gpuEnabled, bool cpuEnabled, int cpuMaxThreads)
    {
       // No dispatcher found so create a new one with one worker thread to
       // start
-      cpuDispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
+      cpu_dispatcher = PxDefaultCpuDispatcherCreate(cpuMaxThreads);
 
       // Return 0 (false) if CPU dispatcher failed to create
-      if (cpuDispatcher == NULL)
+      if (cpu_dispatcher == NULL)
       {
          return 0;
       }
-      else if (cpuDispatcher != NULL)
+      else if (cpu_dispatcher != NULL)
       {
          // Notify the user that the CPU is currently in use
          logger->notify(AT_INFO, "CPU enabled.\n");
 
          // Assign the created dispatcher to the scene description
-         sceneDesc.cpuDispatcher = cpuDispatcher;
+         sceneDesc.cpuDispatcher = cpu_dispatcher;
       }
    }
 
@@ -537,6 +517,9 @@ PHYSX_API void releaseScene()
 {
    // Release all objects in the scene
    px_scene->release();
+
+   // Release the dispatcher
+   cpu_dispatcher->release();
 }
 
 
