@@ -21,6 +21,9 @@
 // limitations under the License.
 
 
+#ifndef PHYSX_COLLISION_CALLBACK_H
+#define PHYSX_COLLISION_CALLBACK_H
+
 #include "PxPhysicsAPI.h"
 
 using namespace std;
@@ -109,3 +112,6 @@ class PhysXCollisionCallback : public PxSimulationEventCallback
       ///
       void   onTrigger(PxTriggerPair *, PxU32);
 };
+
+#endif
+
