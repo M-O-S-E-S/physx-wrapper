@@ -104,6 +104,10 @@ class PhysXRigidActor : public atItem
       ///
       pthread_mutex_t      actor_mutex;
 
+      /// Indicates whether collisions involving this actor shoudl be reported.
+      ///
+      bool                 report_collisions;
+
    public:
       /// Constructor
       ///
@@ -119,9 +123,11 @@ class PhysXRigidActor : public atItem
       /// physical scene.
       /// @param type This is the enumeration value to determine if the rigid
       /// actor is static or dynamic.
+      /// @param Indicates whether collisions involving this actor should be
+      /// reported.
       ///
       PhysXRigidActor(PxPhysics * physics, unsigned int id,
-         float x, float y, float z, ActorType type);
+         float x, float y, float z, ActorType type, bool reportCollisions);
       
       /// Constructor
       ///
@@ -138,9 +144,12 @@ class PhysXRigidActor : public atItem
       /// the actor.
       /// @param type This is the enumeration value to determine if the rigid
       /// actor is static or dynamic.
+      /// @param Indicates whether collisions involving this actor should be
+      /// reported.
       ///
       PhysXRigidActor(PxPhysics * physics, unsigned int id,
-         float x, float y, float z, PxQuat rot, ActorType type);
+         float x, float y, float z, PxQuat rot, ActorType type,
+         bool reportCollisions);
       
       /// Destructor
       ///

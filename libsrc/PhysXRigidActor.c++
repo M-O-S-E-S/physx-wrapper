@@ -33,7 +33,7 @@ const float PhysXRigidActor::default_density = 1000.0006836f;
 
 
 PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int actorID,
-   float x, float y, float z, ActorType type)
+   float x, float y, float z, ActorType type, bool reportCollisions)
 {
    PxTransform   actorPos;
 
@@ -81,13 +81,17 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int actorID,
    // Create the map that will hold the various shapes attached to this actor
    actor_shapes = new atMap();
 
+   // Initialize the flag indicating whether collisions involving this actor
+   // should be reported
+   report_collisions = reportCollisions;
+
    // Now that the operations are complete, unlock the mutex
    pthread_mutex_unlock(&actor_mutex);
 }
 
 
 PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
-   float x, float y, float z, PxQuat rot, ActorType type)
+   float x, float y, float z, PxQuat rot, ActorType type, bool reportCollisions)
 {
    PxTransform   actorPos;
 
@@ -134,6 +138,10 @@ PhysXRigidActor::PhysXRigidActor(PxPhysics * physics, unsigned int id,
 
    // Create the map that will hold the various shapes attached to this actor
    actor_shapes = new atMap();
+
+   // Initialize the flag indicating whether collisions involving this actor
+   // should be reported
+   report_collisions = reportCollisions;
 
    // Now that the operations are complete, unlock the mutex
    pthread_mutex_unlock(&actor_mutex);
@@ -245,6 +253,7 @@ void PhysXRigidActor::addShape(unsigned int shapeId, PxShape * shape,
 {
    atInt *        tempId;
    PhysXShape *   newShape;
+   PxFilterData   filterData;
 
    // Ensure that the following operations on the actor are thread-safe
    pthread_mutex_lock(&actor_mutex);
@@ -271,6 +280,17 @@ void PhysXRigidActor::addShape(unsigned int shapeId, PxShape * shape,
  
       // Attach the new shape to the PhysX actor
       rigid_actor->attachShape(*shape);
+
+      // Check to see if collisions involving this actor should be reported
+      // to the simulator
+      if (report_collisions)
+      {
+         // Set a flag in the filter data, whcih will be eventually used by the
+         // collision filter to determine whether the collision should be
+         // reported
+         filterData.word0 = 1;
+         shape->setSimulationFilterData(filterData);
+      }
  
       // Now that a new shape has been attached, the densities have to
       // be updated

@@ -85,7 +85,8 @@ static CollisionProperties * collisions_array;
 
 
 PhysXRigidActor * createRigidActor(unsigned int id,
-   char * name, float x, float y, float z, bool isDynamic)
+   char * name, float x, float y, float z, bool isDynamic,
+   bool reportCollisions)
 {
    PhysXRigidActor *   actor;
    ActorType           actorType;
@@ -102,7 +103,8 @@ PhysXRigidActor * createRigidActor(unsigned int id,
    }
 
    // Create a new rigid actor with the given position and actor type
-   actor = new PhysXRigidActor(px_physics, id, x, y, z, actorType);
+   actor = new PhysXRigidActor(px_physics, id, x, y, z, actorType,
+      reportCollisions);
    actor->setName(name);
 
    // Keep track of the actor in the map and then return it
@@ -113,7 +115,8 @@ PhysXRigidActor * createRigidActor(unsigned int id,
 
 
 PhysXRigidActor * createRigidActor(unsigned int id,
-   char * name, float x, float y, float z, PxQuat Rot, bool isDynamic)
+   char * name, float x, float y, float z, PxQuat Rot, bool isDynamic,
+   bool reportCollisions)
 {
    PhysXRigidActor *   actor;
    ActorType           actorType;
@@ -130,7 +133,8 @@ PhysXRigidActor * createRigidActor(unsigned int id,
    }
 
    // Create a new rigid actor with the given position and actor type
-   actor = new PhysXRigidActor(px_physics, id, x, y, z, Rot, actorType);
+   actor = new PhysXRigidActor(px_physics, id, x, y, z, Rot, actorType,
+      reportCollisions);
    actor->setName(name);
 
    // Keep track of the actor in the map and then return it
@@ -186,10 +190,15 @@ PxFilterFlags contactFilterShader(PxFilterObjectAttributes attributes0,
    // Generate a default contact report
    pairFlags |= PxPairFlag::eCONTACT_DEFAULT;
 
-   // Always report collision
-   pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
-   pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
-   pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+   // Check to see if either of the actors involved want this collision
+   // reported
+   if (filterData0.word0 == 1 || filterData1.word0 == 1)
+   {
+      // Report the collision
+      pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+      pairFlags |= PxPairFlag::eNOTIFY_CONTACT_POINTS;
+      pairFlags |= PxPairFlag::eNOTIFY_TOUCH_PERSISTS;
+   }
 
    // Add the Continuous Collision Detection (CCD) flag, so that
    // CCD is enabled, and return the default filter flags
@@ -524,7 +533,8 @@ PHYSX_API void releaseScene()
 
 
 PHYSX_API void createActor(
-   unsigned int id, char * name, float x, float y, float z, bool isDynamic)
+   unsigned int id, char * name, float x, float y, float z, bool isDynamic,
+   bool reportCollisions)
 {
    PhysXRigidActor *   actor;
    atInt *             checkID;
@@ -545,7 +555,7 @@ PHYSX_API void createActor(
       px_scene->lockWrite();
 
       // Create the rigid actor
-      actor = createRigidActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic, reportCollisions);
 
       // Add the newly created actor to the scene
       px_scene->addActor(*(actor->getActor()));
@@ -1105,7 +1115,7 @@ PHYSX_API void removeShape(unsigned int id, unsigned int shapeId)
 PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
    float y, float z, unsigned int shapeId, float staticFriction,
    float dynamicFriction, float restitution, float radius, float density,
-   bool isDynamic)
+   bool isDynamic, bool reportCollisions)
 {
    PhysXRigidActor *    actor;
    PxMaterial *         material;
@@ -1127,7 +1137,7 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createRigidActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic, reportCollisions);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -1167,7 +1177,7 @@ PHYSX_API void createActorSphere(unsigned int id, char * name, float x,
 PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
    float posY, float posZ, unsigned int shapeId, float staticFriction,
    float dynamicFriction, float restitution, float halfX, float halfY,
-   float halfZ, float density, bool isDynamic)
+   float halfZ, float density, bool isDynamic, bool reportCollisions)
 {
    PhysXRigidActor *   actor;
    PxMaterial *        material;
@@ -1189,7 +1199,8 @@ PHYSX_API void createActorBox(unsigned int id, char * name, float posX,
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createRigidActor(id, name, posX, posY, posZ, isDynamic);
+      actor = createRigidActor(id, name, posX, posY, posZ, isDynamic,
+                               reportCollisions);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -1230,7 +1241,7 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
    float y, float z, float rotX, float rotY, float rotZ, float rotW,
    unsigned int shapeId, float staticFriction, float dynamicFriction,
    float restitution, float halfHeight, float radius, float density,
-   bool isDynamic)
+   bool isDynamic, bool reportCollisions)
 {
    PhysXRigidActor *     actor;
    PxMaterial *          material;
@@ -1253,7 +1264,7 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
       px_scene->lockWrite();
 
       // Create the rigid actor and add it to the scene
-      actor = createRigidActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic, reportCollisions);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(
@@ -1300,7 +1311,7 @@ PHYSX_API void createActorCapsule(unsigned int id, char * name, float x,
 PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
    float y, float z, unsigned int shapeId, float staticFriction,
    float dynamicFriction, float restitution, float* vertices, int* indices,
-   int vertexCount, int indexCount, bool isDynamic)
+   int vertexCount, int indexCount, bool isDynamic, bool reportCollisions)
 {
    PhysXRigidActor *        actor;
    PxMaterial *             material;
@@ -1328,7 +1339,7 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
       px_scene->lockWrite();
 
       // Create the rigid actor for this mesh and add it to the scene
-      actor = createRigidActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic, reportCollisions);
 
       // Create a new material; used to resolve collisions
       material = px_physics->createMaterial(staticFriction, dynamicFriction,
@@ -1405,7 +1416,7 @@ PHYSX_API void createActorTriangleMesh(unsigned int id, char * name, float x,
 PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
    float y, float z, unsigned int shapeId, float staticFriction,
    float dynamicFriction, float restitution, float* vertices, int vertexCount,
-   float density, bool isDynamic)
+   float density, bool isDynamic, bool reportCollisions)
 {
    PhysXRigidActor *             actor;
    PxMaterial *                  material;
@@ -1434,7 +1445,8 @@ PHYSX_API void createActorConvexMesh(unsigned int id, char * name, float x,
       px_scene->lockWrite();
 
       // Create the rigid actor for this mesh and add it to the scene
-      actor = createRigidActor(id, name, x, y, z, isDynamic);
+      actor = createRigidActor(id, name, x, y, z, isDynamic,
+                               reportCollisions);
 
       // Create a new material; used to resolve collisions
       material =
@@ -2286,7 +2298,7 @@ PHYSX_API void setHeightField(unsigned terrainActorID,
 
    // Create a static actor to hold the terrain height map shape
    actor = createRigidActor(terrainID->getValue(), "terrain", 0.0f, 0.0f, 0.0f,
-      false);
+      false, false);
 
    // Rotate the height map to the correct world position, this is needed
    // because the height map is just a list of heights and doesn't include the

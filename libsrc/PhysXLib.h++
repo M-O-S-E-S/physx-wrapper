@@ -64,11 +64,13 @@ struct EntityProperties
 /// @param z The z value of the position of the physical actor in the scene.
 /// @param isDynamic Flag that will control whether the physical actor is a
 /// RigidStatic or RigidDynamic.
+/// @param reportCollisions Indicates whether collisions involving this actor
+/// should be reported.
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
 extern PhysXRigidActor *   createRigidActor(unsigned int id, char * name, 
-   float x, float y, float z, bool isDynamic);
+   float x, float y, float z, bool isDynamic, bool reportCollisions);
 
 /// Method to create an actor either dynamic or static with given id, name, and
 /// position.
@@ -82,11 +84,14 @@ extern PhysXRigidActor *   createRigidActor(unsigned int id, char * name,
 /// quaternion.
 /// @param isDynamic Flag that will control whether the physical actor is a
 /// RigidStatic or RigidDynamic.
+/// @param reportCollisions Indicates whether collisions involving this actor
+/// should be reported.
 ///
 /// @return The PhysXRigidActor that represents the physical object.
 ///
 extern PhysXRigidActor *   createRigidActor(unsigned int id, char * name,
-   float x, float y, float z, PxQuat Rot, bool isDynamic);
+   float x, float y, float z, PxQuat Rot, bool isDynamic,
+   bool reportCollisions);
 
 /// Method to fetch the actor from the map of actors.
 ///
@@ -186,9 +191,11 @@ extern "C"
    /// @param z The z value of the position of the physical actor in the scene.
    /// @param isDynamic Flag that will control whether the physical actor is a
    /// RigidStatic or RigidDynamic.
+   /// @param reportCollisions Indicates whether collisions involving this actor
+   /// should be reported.
    ///
    void   createActor(unsigned int id, char * name, float x, float y, float z,
-      bool isDynamic);
+      bool isDynamic, bool reportCollisions);
 
    /// Method to attach a sphere shape to an existing actor.
    ///
@@ -393,11 +400,14 @@ extern "C"
    /// @param density The density of the sphere.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
+   /// @param reportCollisions Indicates whether collisions involving this
+   /// actor should be reported.
    ///
    void   createActorSphere(unsigned int id, char * name, float x, float y, 
                             float z, unsigned int shapeId, float staticFriction,
                             float dynamicFriction, float restitution,
-                            float radius, float density, bool isDynamic);
+                            float radius, float density, bool isDynamic,
+                            bool reportCollisions);
 
    /// Method to create a box actor in the physical scene.
    ///
@@ -423,12 +433,14 @@ extern "C"
    /// @param density The density of the box.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
+   /// @param reportCollisions Indicates whether collisions involving this
+   /// actor should be reported.
    ///
    void   createActorBox(unsigned int id, char * name, float x, float y, 
                          float z, unsigned int shapeId, float staticFriction,
                          float dynamicFriction, float restitution, float halfX,
                          float halfY, float halfZ, float density,
-                         bool isDynamic);
+                         bool isDynamic, bool reportCollisions);
 
    /// Method to create a capsule actor in the physical scene.
    ///
@@ -461,6 +473,8 @@ extern "C"
    /// @param density The density of the capsule.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
+   /// @param reportCollisions Indicates whether collisions involving this
+   /// actor should be reported.
    ///
    void   createActorCapsule(unsigned int id, char * name,
                              float x, float y, float z,
@@ -468,7 +482,8 @@ extern "C"
                              unsigned int shapeId,
                              float staticFriction, float dynamicFriction,
                              float restitution, float halfHeight, float radius,
-                             float density, bool isDynamic);
+                             float density, bool isDynamic,
+                             bool reportCollisions);
 
    /// Method to create a triangle mesh actor in the physical scene.
    ///
@@ -495,13 +510,16 @@ extern "C"
    /// @param indexCount The size of the list of indices.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
+   /// @param reportCollisions Indicates whether collisions involving this
+   /// actor should be reported.
    ///
    void   createActorTriangleMesh(unsigned int id, char * name, float x,
                                   float y, float z, unsigned int shapeId,
                                   float staticFriction, float dynamicFriction,
                                   float restitution, float * vertices,
                                   int * indices, int vertexCount,
-                                  int indexCount, bool isDynamic);
+                                  int indexCount, bool isDynamic,
+                                  bool reportCollisions);
 
    /// Method to create a convex mesh actor in the physical scene.
    ///
@@ -527,12 +545,15 @@ extern "C"
    /// @param density The density of the mesh.
    /// @param isDynamic Flag that determines if this is a static or dynamic
    /// actor.
+   /// @param reportCollisions Indicates whether collisions involving this actor
+   /// should be reported.
    ///
    void   createActorConvexMesh(unsigned int id, char * name, float x, float y, 
                                 float z, unsigned int shapeId,
                                 float staticFriction, float dynamicFriction,
                                 float restitution, float * vertices,
-                                int vertexCount, float density, bool isDynamic);
+                                int vertexCount, float density, bool isDynamic,
+                                bool reportCollisions);
 
    /// Remove an actor from the physical scene.
    ///
