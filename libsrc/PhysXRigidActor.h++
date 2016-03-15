@@ -104,7 +104,7 @@ class PhysXRigidActor : public atItem
       ///
       pthread_mutex_t      actor_mutex;
 
-      /// Indicates whether collisions involving this actor shoudl be reported.
+      /// Indicates whether collisions involving this actor should be reported.
       ///
       bool                 report_collisions;
 
